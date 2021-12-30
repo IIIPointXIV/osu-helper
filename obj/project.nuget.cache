@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "v049RSAWwxf5i9D1XVLUMqm4UulkvLSEugTnlpDX4H0VtdWSeJi9IKOW+1VzYDkIhhQss+Ja3fIpBOdwPvGD1Q==",
+  "success": true,
+  "projectFilePath": "F:\\Code\\osu!helper\\osu!helper.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\IIIPointXIV\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.2\\microsoft.netframework.referenceassemblies.1.0.2.nupkg.sha512",
+    "C:\\Users\\IIIPointXIV\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net472\\1.0.2\\microsoft.netframework.referenceassemblies.net472.1.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}

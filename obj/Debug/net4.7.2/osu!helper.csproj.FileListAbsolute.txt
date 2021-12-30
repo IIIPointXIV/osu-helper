@@ -1,0 +1,11 @@
+F:\Code\osu!helper\bin\Debug\net4.7.2\osu!helper.exe.config
+F:\Code\osu!helper\bin\Debug\net4.7.2\osu!helper.exe
+F:\Code\osu!helper\bin\Debug\net4.7.2\osu!helper.pdb
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.csproj.AssemblyReference.cache
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.GeneratedMSBuildEditorConfig.editorconfig
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.AssemblyInfoInputs.cache
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.AssemblyInfo.cs
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.csproj.CoreCompileInputs.cache
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.exe
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.pdb
+F:\Code\osu!helper\obj\Debug\net4.7.2\osu!helper.csproj.SuggestedBindingRedirects.cache
