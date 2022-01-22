@@ -2,13 +2,16 @@
 using System.Windows.Forms;
 using System.Drawing;
 
-public class Program
+namespace osu_helper
 {
-    public static Form1 form = new Form1();
-    [STAThread]
-    static void Main(string[] args)
+    public class Program
     {
-        form.FormLayout();
-        Application.Run(form);
+        public static Form1 form = new Form1();
+        [STAThread]
+        static void Main()
+        {
+            form.FormLayout();
+            Application.Run(form);
+        }
     }
 }
