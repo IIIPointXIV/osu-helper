@@ -465,6 +465,7 @@ public class Form1 : Form
                         sliderImage.Dispose();
                         File.Delete(Path.Combine(mainSkinPath, fileName));
                     }
+                    sliderImage.Dispose();
                 }
             }
         }
@@ -503,32 +504,59 @@ public class Form1 : Form
         if(show) //show skin numbers 
             File.Copy(Path.Combine(osuSkinsPathList[osuSkinsListBox.SelectedIndex], "skin.ini"), Path.Combine(mainSkinPath, "skin.ini"), true);
         else //hide skin numbers
-            EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727");
+            EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
     }
 
-    private void EditSkinIni(string searchFor, string replaceWith)
+    private void EditSkinIni(string searchFor, string replaceWith, string fallBackAdd)
     {
         string skinINIPath = Path.Combine(mainSkinPath, "skin.ini");
         File.Copy(skinINIPath, skinINIPath.Replace("skin.ini", "skin.ini.temp"));
         StreamReader reader = new StreamReader(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
         StreamWriter writer = new StreamWriter(skinINIPath);
         string currLine;
-        int count = 0;
+        bool lineFound = false;
         while((currLine = reader.ReadLine()) != null)
         {
             if(currLine.Contains(searchFor))
             {
                 writer.WriteLine(replaceWith);
-                count++;
+                lineFound = true;
                 continue;
             }
             writer.WriteLine(currLine);
-            count++;
         }
+
+        currLine = null;
         reader.Close();
         reader.Dispose();
         writer.Close();
         writer.Dispose();
+
+       
+
+        if(!lineFound)
+        {
+            StreamWriter writerNew = new StreamWriter(skinINIPath);
+            StreamReader readerNew = new StreamReader(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
+
+            while((currLine = readerNew.ReadLine()) != null)
+            {   
+                if(currLine.Contains(fallBackAdd))
+                {
+                    
+                    writerNew.WriteLine(currLine);
+                    writerNew.WriteLine(replaceWith);
+                    continue;
+                }
+                writerNew.WriteLine(currLine);
+                
+            }
+            writerNew.Dispose();
+            readerNew.Dispose();
+        }
+        
+        
+        
         File.Delete(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
     }
 
@@ -607,6 +635,10 @@ public class Form1 : Form
         Console.WriteLine("Test debug");
     }
 
+    private void DebugLog(bool log )
+    {
+        Console.WriteLine(log);
+    }
     private void UpdateSkinTextFile(string skinName)
     {
         File.WriteAllText(Path.Combine(osuPath, "skins", "currentSkin.txt"), skinName);
