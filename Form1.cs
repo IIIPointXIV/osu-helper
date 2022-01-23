@@ -24,6 +24,7 @@ public class Form1 : Form
         private CheckBox showSkinNumbersBox;
         private CheckBox showSliderEndsBox;
     private ToolTip toolTip;
+    private ComboBox skinFolderSelector;
     private Font mainFont;
     private ListBox osuSkinsListBox;
     private List<string> osuSkinsPathList = new List<string>();
@@ -57,8 +58,8 @@ public class Form1 : Form
 
         osuSkinsListBox = new ListBox()
         {
-            Size = new Size(500, 700),
-            Top = 30,
+            Size = new Size(500, 676),
+            Top = 60,
             Font = mainFont,
             SelectionMode = SelectionMode.MultiExtended,
         };
@@ -152,6 +153,35 @@ public class Form1 : Form
         openSkinFolderButton.Click += new EventHandler(OpenSkinFolder);
         Controls.Add(openSkinFolderButton);
 
+        skinFolderSelector = new ComboBox()
+        {
+            Top = 30,
+            Font = mainFont,
+            Height = 23,
+            Width = 50,
+        };
+        skinFolderSelector.TextChanged += new EventHandler(SkinFolderSelectorChanged);
+
+        if(GetRegValue("skinFolders") != null)
+        {
+            if(!skinFolderSelector.Items.Contains("All"))
+                skinFolderSelector.Items.Add("All");
+            
+            string[] foldersArr = GetRegValue("skinFolders").Split(',');
+
+            foreach(string name in foldersArr)
+            {
+                skinFolderSelector.Items.Add(name);
+            }
+            skinFolderSelector.Text = GetRegValue("selectedSkinFolder");
+        }
+        else
+        {
+            skinFolderSelector.Items.Add("All");
+            skinFolderSelector.Text = "All";
+        }
+        Controls.Add(skinFolderSelector);
+
         writeCurrSkinBox = new CheckBox()
         {
             Height = 25,
@@ -215,6 +245,7 @@ public class Form1 : Form
         toolTip.SetToolTip(deleteSkinButton, "Moves selected skin to \"Deleted Skins\" folder");
         toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
         toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible.\nChecked means that they are shown.");
+        toolTip.SetToolTip(skinFolderSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
         
         //fileDialog stuff
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
@@ -331,6 +362,11 @@ public class Form1 : Form
         }
         osuSkinsPathList.RemoveAt(osuSkinsListBox.SelectedIndex);
         osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
+    }
+
+    private void SkinFolderSelectorChanged(object sender, EventArgs e)
+    {
+
     }
 
 //Skin Switching
@@ -548,7 +584,7 @@ public class Form1 : Form
     {
         if(osuSkinsListBox.SelectedItems.Count == 1)
             return osuSkinsPathList[osuSkinsListBox.SelectedIndex];
-        else if(GetRegValue("skinName") == null || osuSkinsListBox.SelectedItems.Count > 1)
+        else if(GetRegValue("skinName") == null || osuSkinsListBox.SelectedItems.Count > 1 || osuSkinsListBox.SelectedItems.Count == 1)
             DebugLog("Multiple\\no skins selected. Unable to get skin path.");
         else
             return Path.Combine(osuPath, "skins", GetRegValue("skinName"));
