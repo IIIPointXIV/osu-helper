@@ -1,0 +1,15 @@
+F:\Code\osu!helper\bin\Debug\net6-windows\osu!helper.exe
+F:\Code\osu!helper\bin\Debug\net6-windows\osu!helper.deps.json
+F:\Code\osu!helper\bin\Debug\net6-windows\osu!helper.runtimeconfig.json
+F:\Code\osu!helper\bin\Debug\net6-windows\osu!helper.dll
+F:\Code\osu!helper\bin\Debug\net6-windows\ref\osu!helper.dll
+F:\Code\osu!helper\bin\Debug\net6-windows\osu!helper.pdb
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.csproj.AssemblyReference.cache
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.GeneratedMSBuildEditorConfig.editorconfig
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.AssemblyInfoInputs.cache
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.AssemblyInfo.cs
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.csproj.CoreCompileInputs.cache
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.dll
+F:\Code\osu!helper\obj\Debug\net6-windows\ref\osu!helper.dll
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.pdb
+F:\Code\osu!helper\obj\Debug\net6-windows\osu!helper.genruntimeconfig.cache

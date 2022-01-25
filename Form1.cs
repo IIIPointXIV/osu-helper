@@ -23,6 +23,7 @@ public class Form1 : Form
         private CheckBox writeCurrSkinBox;
         private CheckBox showSkinNumbersBox;
         private CheckBox showSliderEndsBox;
+        private CheckBox disableSkinChangesBox;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -126,7 +127,7 @@ public class Form1 : Form
             Top = 737,
             Width = 110,
             Font = mainFont,
-            Text = "Random Skin"
+            Text = "Random Skin",
         };
         randomSkinButton.Click += new EventHandler(RandomSkin_Click);
         Controls.Add(randomSkinButton);
@@ -199,13 +200,30 @@ public class Form1 : Form
         writeCurrSkinBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(writeCurrSkinBox);
 
+        disableSkinChangesBox = new CheckBox()
+        {
+            Height = 25,
+            Width = 200,
+            Left = 585,
+            Top = 3,
+            Text = "Disable skin changes",
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        if(GetRegValue("disableSkinChangesBox") != null)
+            disableSkinChangesBox.Checked = bool.Parse(GetRegValue("disableSkinChangesBox"));
+        else
+            disableSkinChangesBox.Checked = true;
+        
+        disableSkinChangesBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
+        Controls.Add(disableSkinChangesBox);
+
         showSkinNumbersBox = new CheckBox()
         {
             Height = 25,
             Width = 297,
             Font = mainFont,
             Left = 503,
-            Top = 30,
+            Top = 60,
             Text = "Hitcircle Numbers",
             TextAlign = ContentAlignment.MiddleLeft,
         };
@@ -223,7 +241,7 @@ public class Form1 : Form
             Width = 297,
             Font = mainFont,
             Left = 503,
-            Top = 50,
+            Top = 80,
             Text = "Slider Ends",
             TextAlign = ContentAlignment.MiddleLeft,
         };
@@ -246,8 +264,8 @@ public class Form1 : Form
         toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
         toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible.\nChecked means that they are shown.");
         toolTip.SetToolTip(skinFolderSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
-        
-        //fileDialog stuff
+        toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
+
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
         {
             InitialDirectory =  osuPath,
@@ -278,7 +296,6 @@ public class Form1 : Form
                 DebugLog("Error searching skins");
             }
         }
-
     }
 
 //MISC Skin handling
@@ -318,6 +335,7 @@ public class Form1 : Form
         osuSkinsPathList.Clear();
         DirectoryInfo di = new DirectoryInfo(osuPath + "\\skins");
         var osuSkins = di.GetDirectories();
+
         foreach(DirectoryInfo skin in osuSkins)
         {
             string skinName = skin.FullName.Replace(osuPath + "\\skins\\", "");
@@ -326,7 +344,6 @@ public class Form1 : Form
             {
                 osuSkinsPathList.Add(skin.FullName);
                 osuSkinsListBox.Items.Add(skinName);
-                //DebugLog(skinName);
             }
         }
         osuSkinsListBox.EndUpdate();
@@ -403,8 +420,12 @@ public class Form1 : Form
             file.CopyTo(mainSkinPath + "\\" + file.Name, true);
         }
         RecursiveSkinFolderMove(skinPath, "");
-        ShowHideHitCircleNumbers(showSkinNumbersBox.Checked);
-        ShowHideSliderEnds(showSliderEndsBox.Checked);
+
+        if(!disableSkinChangesBox.Checked)
+        {
+            ShowHideHitCircleNumbers(showSkinNumbersBox.Checked);
+            ShowHideSliderEnds(showSliderEndsBox.Checked);
+        }
     }
 
     private void RecursiveSkinFolderMove(string skinPath, string prevFolder)
@@ -453,19 +474,22 @@ public class Form1 : Form
         {
             foreach(string fileName in sliderEnds)
             {
-                if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && Image.FromFile(Path.Combine(GetCurrentSkinPath(), fileName)).Size.Height > 100)
+                using(Image image = (File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) ? Image.FromFile(Path.Combine(GetCurrentSkinPath(), fileName)) : null))
                 {
-                    File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
-                }
-                else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
-                {
-                    sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
-                    if(sliderImage.Size.Height < 100)
+                    if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && image.Size.Height > 100)
                     {
-                        sliderImage.Dispose();
-                        File.Delete(Path.Combine(mainSkinPath, fileName));
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
                     }
-                    sliderImage.Dispose();
+                    else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
+                    {
+                        sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
+                        if(sliderImage.Size.Height < 100)
+                        {
+                            sliderImage.Dispose();
+                            File.Delete(Path.Combine(mainSkinPath, fileName));
+                        }
+                        sliderImage.Dispose(); 
+                    }
                 }
             }
         }
@@ -549,7 +573,6 @@ public class Form1 : Form
                     continue;
                 }
                 writerNew.WriteLine(currLine);
-                
             }
             writerNew.Dispose();
             readerNew.Dispose();
@@ -586,6 +609,11 @@ public class Form1 : Form
             valName = "showSliderEndsBox";
             val = showSliderEndsBox.Checked.ToString();
             ShowHideSliderEnds(showSliderEndsBox.Checked);
+        }
+        else if(sender == disableSkinChangesBox)
+        {
+            valName = "disableSkinChangesBox";
+            val = disableSkinChangesBox.Checked.ToString();
         }
 
         ChangeRegValue(valName, val);
@@ -630,15 +658,16 @@ public class Form1 : Form
         Console.WriteLine(log);
     }
 
+    private void DebugLog(bool log )
+    {
+        Console.WriteLine(log);
+    }
+
     private void DebugLog()
     {
         Console.WriteLine("Test debug");
     }
 
-    private void DebugLog(bool log )
-    {
-        Console.WriteLine(log);
-    }
     private void UpdateSkinTextFile(string skinName)
     {
         File.WriteAllText(Path.Combine(osuPath, "skins", "currentSkin.txt"), skinName);
