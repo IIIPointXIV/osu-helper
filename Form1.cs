@@ -24,6 +24,7 @@ public class Form1 : Form
         private CheckBox showSkinNumbersBox;
         private CheckBox showSliderEndsBox;
         private CheckBox disableSkinChangesBox;
+        private CheckBox disableCursorTrailBox;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -229,12 +230,28 @@ public class Form1 : Form
         };
         showSkinNumbersBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(showSkinNumbersBox);
-        
         if(GetRegValue("showSkinNumbersBox") != null)
             showSkinNumbersBox.Checked = bool.Parse(GetRegValue("showSkinNumbersBox"));
         else
             showSkinNumbersBox.Checked = true;
 
+        disableCursorTrailBox = new CheckBox()
+        {
+            Height = 25,
+            Width = 297,
+            Font = mainFont,
+            Left = 503,
+            Top = 100,
+            Text = "Cursor Trail",
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        disableCursorTrailBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
+        Controls.Add(disableCursorTrailBox);
+        if(GetRegValue("disableCursorTrailBox") != null)
+            disableCursorTrailBox.Checked = bool.Parse(GetRegValue("disableCursorTrailBox"));
+        else
+            disableCursorTrailBox.Checked = false;
+        
         showSliderEndsBox = new CheckBox()
         {
             Height = 25,
@@ -247,7 +264,6 @@ public class Form1 : Form
         };
         showSliderEndsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(showSliderEndsBox);
-
         if(GetRegValue("showSliderEndsBox") != null)
             showSliderEndsBox.Checked = bool.Parse(GetRegValue("showSliderEndsBox"));
         else
@@ -265,6 +281,7 @@ public class Form1 : Form
         toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible.\nChecked means that they are shown.");
         toolTip.SetToolTip(skinFolderSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
         toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
+        toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
 
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
         {
@@ -425,6 +442,7 @@ public class Form1 : Form
         {
             ShowHideHitCircleNumbers(showSkinNumbersBox.Checked);
             ShowHideSliderEnds(showSliderEndsBox.Checked);
+            DisableCursorTrail(disableCursorTrailBox.Checked);
         }
     }
 
@@ -458,6 +476,32 @@ public class Form1 : Form
     }
 
 //Skin editing
+    private void DisableCursorTrail(bool show)
+    {
+        List<string> names = new List<string>()
+        {
+            "cursortrail@2x.png",
+            "cursortrail.png",
+        };
+        if(show)
+        {
+            foreach(string name in names)
+                if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
+                    File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+        }
+        else
+        {
+            Bitmap empty = new Bitmap(1, 1);
+            foreach(string name in names)
+            {
+                if(File.Exists(Path.Combine(mainSkinPath, name)))
+                    File.Delete(Path.Combine(mainSkinPath, name));
+                empty.Save(Path.Combine(mainSkinPath, name));
+            }
+            empty.Dispose();
+        }
+    }
+    
     private void ShowHideSliderEnds(bool show)
     {
         string[] sliderEnds =
@@ -612,8 +656,19 @@ public class Form1 : Form
         }
         else if(sender == disableSkinChangesBox)
         {
+            if(!disableSkinChangesBox.Checked)
+            {
+                ShowHideHitCircleNumbers(showSkinNumbersBox.Checked);
+                ShowHideSliderEnds(showSliderEndsBox.Checked);
+            }
             valName = "disableSkinChangesBox";
             val = disableSkinChangesBox.Checked.ToString();
+        }
+        else if(sender == disableCursorTrailBox)
+        {
+            valName = "disableCursorTrailBox";
+            val = disableCursorTrailBox.Checked.ToString();
+            DisableCursorTrail(disableCursorTrailBox.Checked);
         }
 
         ChangeRegValue(valName, val);
