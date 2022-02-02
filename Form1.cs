@@ -27,6 +27,7 @@ public class Form1 : Form
         private CheckBox showSliderEndsBox;
         private CheckBox disableSkinChangesBox;
         private CheckBox disableCursorTrailBox;
+        private CheckBox showComboBurstsBox;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -45,6 +46,7 @@ public class Form1 : Form
         writeCurrSkinToTXT,
         showSliderEndsBox,
         disableSkinChangesBox,
+        showComboBurstsBox,
     };
     public void FormLayout()
     {
@@ -283,6 +285,25 @@ public class Form1 : Form
         disableSkinChangesBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(disableSkinChangesBox);
 
+        showComboBurstsBox = new CheckBox()
+        {
+            Height = 25,
+            Width = 297,
+            Font = mainFont,
+            Left = 503,
+            Top = 120,
+            Text = "Combo Bursts",
+            TextAlign = ContentAlignment.MiddleLeft,
+            //ThreeState = true,
+        };
+        if(GetRegValue(RegValueNames.showComboBurstsBox) != null)
+            showComboBurstsBox.Checked = bool.Parse(GetRegValue(RegValueNames.showComboBurstsBox));
+        else
+            showComboBurstsBox.Checked = true;
+
+        showComboBurstsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
+        Controls.Add(showComboBurstsBox);
+
         showSkinNumbersBox = new CheckBox()
         {
             Height = 25,
@@ -349,6 +370,7 @@ public class Form1 : Form
         toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
         toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix");
         toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
+        toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
 
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
         {
@@ -527,9 +549,7 @@ public class Form1 : Form
             ShowHideHitCircleNumbers(showSkinNumbersBox.Checked);
             ShowHideSliderEnds(showSliderEndsBox.Checked);
             DisableCursorTrail(disableCursorTrailBox.Checked);
-            Bitmap img = new Bitmap(1,1);
-            img.Save(mainSkinPath + "\\comboburst.png");
-            img.Dispose();
+            ShowHideCombobursts(showComboBurstsBox.Checked);
         }
     }
 
@@ -563,6 +583,42 @@ public class Form1 : Form
     }
 
 //Skin editing
+    private void ShowHideCombobursts(bool show)
+    {
+        Bitmap img = new Bitmap(1,1);
+        List<string> fileNames = new List<string>()
+        {
+            "comboburst",
+            "comboburst@2x",
+            "comboburst-fruits",
+            "comboburst-fruits@2x",
+            "comboburst-mania",
+            "comboburst-mania@2x",
+        };
+
+        foreach(string name in fileNames)
+        {
+            if(!File.Exists(Path.Combine(mainSkinPath, name + ".png")))
+            {
+                img.Save(Path.Combine(mainSkinPath, name + ".png"));
+            }
+            else if(!show)
+            {
+                img.Save(Path.Combine(mainSkinPath, name + ".png"));
+            }
+        }
+
+        DirectoryInfo di = new DirectoryInfo(mainSkinPath);
+        foreach(FileInfo file in di.GetFiles())
+        {
+            foreach(string name in fileNames)
+            {
+                if(file.Name.Contains(name))
+                    img.Save(Path.Combine(mainSkinPath, file.Name));
+            }
+        }
+        img.Dispose();
+    }
     private void DisableCursorTrail(bool show)
     {
         if(GetCurrentSkinPath() == null)
@@ -759,6 +815,12 @@ public class Form1 : Form
         {
             valName = RegValueNames.selectedSkinFolder;
             val = skinFolderSelector.Text;
+        }
+        else if(sender == showComboBurstsBox)
+        {
+            valName = RegValueNames.showComboBurstsBox;
+            val = showComboBurstsBox.Checked.ToString();
+            ShowHideCombobursts(showComboBurstsBox.Checked);
         }
         else
         {
