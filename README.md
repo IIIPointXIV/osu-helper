@@ -19,7 +19,7 @@
 - Make a random skin from those shown
 
 # How To Use
-1. Download exe from latest release.
+1. Download exe from latest [release](https://github.com/IIIPointXIV/osu-helper/releases).
 2. Move exe to easy to remember folder (Like the desktop.)
 3. Run it.
 4. Check that the path shown is the correct path. If it is not correct, click the "osu! Path" button select the correct path.
