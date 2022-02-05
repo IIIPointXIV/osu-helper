@@ -12,11 +12,13 @@
 - Open the folder of the current skin
 - Delete the skin
 - Output name of current skin to a txt file (off by default)
+- Show/Hide hit lighting
 
 # WIP Features
-- Show/Hide hit lighting
 - Make skin instafade
 - Make a random skin from those shown
+- Override combo colors
+- Rename skins
 
 # How To Use
 1. Download exe from latest [release](https://github.com/IIIPointXIV/osu-helper/releases).
