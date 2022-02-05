@@ -1,9 +1,6 @@
-//using System.Reflection.Emit;
-//using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Win32;
-//using System.Runtime.ConstrainedExecution;
 using System;
 using System.Drawing;
 using System.IO;
@@ -28,6 +25,7 @@ public class Form1 : Form
         private CheckBox disableSkinChangesBox;
         private CheckBox disableCursorTrailBox;
         private CheckBox showComboBurstsBox;
+        private CheckBox showHitlightingBox;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -47,6 +45,7 @@ public class Form1 : Form
         showSliderEndsBox,
         disableSkinChangesBox,
         showComboBurstsBox,
+        showHitlightingBox,
     };
     public void FormLayout()
     {
@@ -304,6 +303,24 @@ public class Form1 : Form
         showComboBurstsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(showComboBurstsBox);
 
+        showHitlightingBox = new CheckBox()
+        {
+            Height = 25,
+            Width = 297,
+            Font = mainFont,
+            Left = 503,
+            Top = 140,
+            Text = "Hit Lighting",
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        if(GetRegValue(RegValueNames.showHitlightingBox) != null)
+            showHitlightingBox.Checked = bool.Parse(GetRegValue(RegValueNames.showHitlightingBox));
+        else
+            showHitlightingBox.Checked = false;
+
+        showHitlightingBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
+        Controls.Add(showHitlightingBox);
+
         showSkinNumbersBox = new CheckBox()
         {
             Height = 25,
@@ -550,6 +567,7 @@ public class Form1 : Form
             ShowHideSliderEnds(showSliderEndsBox.Checked);
             DisableCursorTrail(disableCursorTrailBox.Checked);
             ShowHideCombobursts(showComboBurstsBox.Checked);
+            ShowHitLighting(showHitlightingBox.Checked);
         }
     }
 
@@ -583,6 +601,49 @@ public class Form1 : Form
     }
 
 //Skin editing
+    private void ShowHitLighting(bool show)
+    {
+        List<string> fileNames = new List<string>()
+        {
+            "lighting.png",
+            "lighting@2x.png",
+        };
+
+        if(show)
+        {
+            foreach(string name in fileNames)
+            {
+                if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
+                {
+                    Image thisImg = Image.FromFile(Path.Combine(GetCurrentSkinPath(), name));
+                    if(thisImg.Height > 100)
+                    {
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+                        thisImg.Dispose();
+                        continue;
+                    }
+                    thisImg.Dispose();
+                    File.Delete(Path.Combine(mainSkinPath, name));
+                }
+                else if(File.Exists(Path.Combine(mainSkinPath, name)))
+                {
+                    File.Delete(Path.Combine(mainSkinPath, name));
+                }
+            }
+        }
+        else
+        {
+            Image empty = new Bitmap(1,1);
+            foreach(string name in fileNames)
+            {
+                if(File.Exists(Path.Combine(mainSkinPath, name)))
+                    File.Delete(Path.Combine(mainSkinPath, name));
+
+                empty.Save(Path.Combine(mainSkinPath, name));
+            }
+        }
+    }
+
     private void ShowHideCombobursts(bool show)
     {
         Bitmap img = new Bitmap(1,1);
@@ -619,6 +680,7 @@ public class Form1 : Form
         }
         img.Dispose();
     }
+    
     private void DisableCursorTrail(bool show)
     {
         if(GetCurrentSkinPath() == null)
@@ -821,6 +883,12 @@ public class Form1 : Form
             valName = RegValueNames.showComboBurstsBox;
             val = showComboBurstsBox.Checked.ToString();
             ShowHideCombobursts(showComboBurstsBox.Checked);
+        }
+        else if(sender == showHitlightingBox)
+        {
+            valName = RegValueNames.showHitlightingBox;
+            val = showHitlightingBox.Checked.ToString();
+            ShowHitLighting(showHitlightingBox.Checked);
         }
         else
         {
