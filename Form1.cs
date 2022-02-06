@@ -718,6 +718,14 @@ public class Form1 : Form
             "sliderendcircleoverlay.png",
             "sliderendcircleoverlay@2x.png"
         };
+       /*  string[] starCircle = 
+        {
+            "sliderstartcircle.png",
+            "sliderstartcircle@2x.png",
+            "sliderstartcircleoverlay@2x.png",
+            "sliderstartcircleoverlay.png",
+        }; */
+
         Bitmap emptyImage = new Bitmap(1, 1);
         Image sliderImage = new Bitmap(1, 1);
 
@@ -727,6 +735,12 @@ public class Form1 : Form
             {
                 using(Image image = (File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) ? Image.FromFile(Path.Combine(GetCurrentSkinPath(), fileName)) : null))
                 {
+                    if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle"))) && image.Height < 100)
+                    {
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(mainSkinPath, fileName), true);
+                        continue;
+                    }
+
                     if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && image.Size.Height > 100)
                     {
                         File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
