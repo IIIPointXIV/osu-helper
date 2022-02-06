@@ -728,16 +728,27 @@ public class Form1 : Form
 
         Bitmap emptyImage = new Bitmap(1, 1);
         Image sliderImage = new Bitmap(1, 1);
+        string skipAt2X = "";
 
         if(show)//Showing ends
         {
             foreach(string fileName in sliderEnds)
             {
+                if(skipAt2X == fileName)
+                {
+                    skipAt2X = "";
+                    continue;
+                }
+                
                 using(Image image = (File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) ? Image.FromFile(Path.Combine(GetCurrentSkinPath(), fileName)) : null))
                 {
                     if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle"))) && image.Height < 100)
                     {
                         File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(mainSkinPath, fileName), true);
+                        if(!File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace(".png", "@2x.png"))))
+                        {
+                            skipAt2X = fileName.Replace(".png", "@2x.png");
+                        }
                         continue;
                     }
 
