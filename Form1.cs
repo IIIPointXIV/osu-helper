@@ -695,7 +695,11 @@ public class Form1 : Form
             "hitcircle.png",
             "hitcircle@2x.png",
             "hitcircleoverlay.png",
-            "hitcircleoverlay@2x.png"
+            "hitcircleoverlay@2x.png",
+            "sliderstartcircle.png",
+            "sliderstartcircle@2x.png",
+            "sliderstartcircleoverlay.png",
+            "sliderstartcircleoverlay@2x.png",
         };
         if(show)
         {
@@ -833,13 +837,6 @@ public class Form1 : Form
             "sliderendcircleoverlay.png",
             "sliderendcircleoverlay@2x.png"
         };
-       /*  string[] starCircle = 
-        {
-            "sliderstartcircle.png",
-            "sliderstartcircle@2x.png",
-            "sliderstartcircleoverlay@2x.png",
-            "sliderstartcircleoverlay.png",
-        }; */
 
         Bitmap emptyImage = new Bitmap(1, 1);
         Image sliderImage = new Bitmap(1, 1);
@@ -857,21 +854,23 @@ public class Form1 : Form
                 
                 using(Image image = (File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) ? Image.FromFile(Path.Combine(GetCurrentSkinPath(), fileName)) : null))
                 {
-                    if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("end", "start"))) && (image == null ? true : image.Size.Height < 100))
+                    if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && (image == null ? true : image.Size.Height < 100))
+                    {
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
+                    }
+                    else if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("end", "start"))))
                     {
                         File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(mainSkinPath, fileName), true);
                         if(!File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace(".png", "@2x.png"))))
                         {
                             skipAt2X = fileName.Replace(".png", "@2x.png");
                         }
-                        continue;
                     }
-
-                    if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && image.Size.Height > 100)
+                    else if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit"))))
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit")), Path.Combine(mainSkinPath, fileName), true);
                     }
-                    else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
+                    /* else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
                     {
                         sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
                         if(sliderImage.Size.Height < 100)
@@ -880,7 +879,7 @@ public class Form1 : Form
                             File.Delete(Path.Combine(mainSkinPath, fileName));
                         }
                         sliderImage.Dispose();
-                    }
+                    } */
                 }
             }
         }
