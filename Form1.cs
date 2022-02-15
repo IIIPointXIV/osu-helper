@@ -51,6 +51,7 @@ public class Form1 : Form
         showHitlightingBox,
         hiddenSkinFolders,
     };
+    bool startUpTime = true;
     public void FormLayout()
     {
         mainFont = new Font("Segoe UI", 12);
@@ -185,15 +186,21 @@ public class Form1 : Form
         {
             if(ev.KeyChar.Equals((char)13))
             {
-                if(!skinFolderSelector.Items.Contains(skinFolderSelector.Text) && String.IsNullOrWhiteSpace(skinFolderSelector.Text))
+                if(!skinFolderSelector.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(skinFolderSelector.Text) &&
+                        skinFolderSelector.Text != "All" && skinFolderSelector.Text != ",")
                 {
                     skinFolderSelector.Items.Add(skinFolderSelector.Text);
                     ChangeRegValue(RegValueNames.skinFolders, (GetRegValue(RegValueNames.skinFolders) == null ? "" : GetRegValue(RegValueNames.skinFolders) + ",") + skinFolderSelector.Text);
                 }
+                else if(skinFolderSelector.Text == ",")
+                {
+                    skinFolderSelector.Text = "All";
+                    DebugLog("You cannot add \",\" as a prefix");
+                }
                 ev.Handled = true;
             }
         };
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFolders)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFolders)))
         {
             if(!skinFolderSelector.Items.Contains("All"))
                 skinFolderSelector.Items.Add("All");
@@ -210,7 +217,7 @@ public class Form1 : Form
             skinFolderSelector.Items.Add("All");
             skinFolderSelector.Text = "All";
         }
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.selectedSkinFolder)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.selectedSkinFolder)))
         {
             skinFolderSelector.Text = GetRegValue(RegValueNames.selectedSkinFolder);
         }
@@ -240,12 +247,12 @@ public class Form1 : Form
             Left = 102,
             Text = "Hide",
         };
-        hideSelectedSkinFolderButton.Click += new EventHandler((sender, ev) =>
+        /* hideSelectedSkinFolderButton.Click += new EventHandler((sender, ev) =>
         {
             //if the saved value is set, add current selection to it, if not just make it current selection
-            ChangeRegValue(RegValueNames.hiddenSkinFolders, (String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) ?
+            ChangeRegValue(RegValueNames.hiddenSkinFolders, (!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) ?
                             GetRegValue(RegValueNames.hiddenSkinFolders) + "," + skinFolderSelector.Text : skinFolderSelector.Text));
-        });
+        }); */
         hideSelectedSkinFolderButton.Click += new EventHandler(SearchOsuSkins);
         Controls.Add(hideSelectedSkinFolderButton);
 
@@ -259,12 +266,14 @@ public class Form1 : Form
             TextAlign = ContentAlignment.MiddleLeft,
         };
         hiddenFoldersText.Width = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 19;
+        
 
         deleteSkinSelectorButton = new System.Windows.Forms.Button()
         {
             Top = 33,
             Font = mainFont,
             Width = 61,
+            Left = 156,
             Text = "Delete",
         };
         hiddenFoldersText.TextChanged += new EventHandler((sender, ev) =>
@@ -279,10 +288,15 @@ public class Form1 : Form
                 if(!Controls.Contains(hiddenFoldersText))
                     Controls.Add(hiddenFoldersText);
 
-                deleteSkinSelectorButton.Left = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 149;
+                deleteSkinSelectorButton.Left = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 152;
+                hiddenFoldersText.Width =  TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 30;
             }
         });
-        hiddenFoldersText.Text = "";
+        Controls.Add(deleteSkinSelectorButton);
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
+            hiddenFoldersText.Text = hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+        else
+            hiddenFoldersText.Text = "";
 
         deleteSkinSelectorButton.Click += new EventHandler((sender, e) =>
         {
@@ -306,7 +320,7 @@ public class Form1 : Form
             skinFolderSelector.Text = "All";
             ChangeRegValue(RegValueNames.selectedSkinFolder, "All");
         });
-        Controls.Add(deleteSkinSelectorButton);
+        
 
         writeCurrSkinBox = new CheckBox()
         {
@@ -317,7 +331,7 @@ public class Form1 : Form
             Text = "Write current skin to .txt file",
             TextAlign = ContentAlignment.MiddleLeft,
         };
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.writeCurrSkinToTXT)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.writeCurrSkinToTXT)))
             writeCurrSkinBox.Checked = bool.Parse(GetRegValue(RegValueNames.writeCurrSkinToTXT));
         else
             writeCurrSkinBox.Checked = false;
@@ -334,7 +348,7 @@ public class Form1 : Form
             Text = "Disable skin changes",
             TextAlign = ContentAlignment.MiddleLeft,
         };
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.disableSkinChangesBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.disableSkinChangesBox)))
             disableSkinChangesBox.Checked = bool.Parse(GetRegValue(RegValueNames.disableSkinChangesBox));
         else
             disableSkinChangesBox.Checked = true;
@@ -353,7 +367,7 @@ public class Form1 : Form
             TextAlign = ContentAlignment.MiddleLeft,
             //ThreeState = true,
         };
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showComboBurstsBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showComboBurstsBox)))
             showComboBurstsBox.Checked = bool.Parse(GetRegValue(RegValueNames.showComboBurstsBox));
         else
             showComboBurstsBox.Checked = true;
@@ -371,7 +385,7 @@ public class Form1 : Form
             Text = "Hit Lighting",
             TextAlign = ContentAlignment.MiddleLeft,
         };
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showHitlightingBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showHitlightingBox)))
             showHitlightingBox.Checked = bool.Parse(GetRegValue(RegValueNames.showHitlightingBox));
         else
             showHitlightingBox.Checked = false;
@@ -391,7 +405,7 @@ public class Form1 : Form
         };
         showSkinNumbersBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(showSkinNumbersBox);
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSkinNumbersBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSkinNumbersBox)))
             showSkinNumbersBox.Checked = bool.Parse(GetRegValue(RegValueNames.showSkinNumbersBox));
         else
             showSkinNumbersBox.Checked = true;
@@ -408,7 +422,7 @@ public class Form1 : Form
         };
         disableCursorTrailBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(disableCursorTrailBox);
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.disableCursorTrailBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.disableCursorTrailBox)))
             disableCursorTrailBox.Checked = bool.Parse(GetRegValue(RegValueNames.disableCursorTrailBox));
         else
             disableCursorTrailBox.Checked = true;
@@ -425,7 +439,7 @@ public class Form1 : Form
         };
         showSliderEndsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(showSliderEndsBox);
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSliderEndsBox)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSliderEndsBox)))
             showSliderEndsBox.Checked = bool.Parse(GetRegValue(RegValueNames.showSliderEndsBox));
         else
             showSliderEndsBox.Checked = false;
@@ -436,16 +450,18 @@ public class Form1 : Form
         toolTip.SetToolTip(writeCurrSkinBox, "Writes the name of the current skin to a text\nfile in the \"Skins\" folder. Helpful for streamers.");
         toolTip.SetToolTip(randomSkinButton, "Selects random skin from visible skins");
         toolTip.SetToolTip(openSkinFolderButton, "Opens current skin folder");
-        toolTip.SetToolTip(useSkinButton, "Changes to selected skin. If multiple \nare selected, it chooses a random one.");
+        toolTip.SetToolTip(useSkinButton, "Changes to selected skin. If multiple\nare selected, it chooses a random one.");
         toolTip.SetToolTip(deleteSkinButton, "Moves selected skin to \"Deleted Skins\" folder");
         toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
-        toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible.\nChecked means that they are shown.");
+        toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible\nChecked means that they are shown.");
         toolTip.SetToolTip(skinFolderSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
         toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
         toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
-        toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix");
+        toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix.\nResets hidden folders.");
+        toolTip.SetToolTip(hideSelectedSkinFolderButton, "Hides skins with selected prefix.\nPress show button to reset them.");
         toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
         toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
+        toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");
 
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
         {
@@ -455,6 +471,7 @@ public class Form1 : Form
             Title = "Select osu! directory"
         };
 
+        startUpTime = false;
         DirectoryInfo osuPathDI = new DirectoryInfo(osuPath + "\\skins");
         if(osuPathDI.Exists)
         {
@@ -510,7 +527,37 @@ public class Form1 : Form
 
     private void SearchOsuSkins(object sender, EventArgs e)
     {
+        if(startUpTime)
+            return;
+
         List<string> hiddenSkinFoldersList = new List<string>();
+
+        if(sender == hideSelectedSkinFolderButton)
+        {
+            if(skinFolderSelector.Text != "All" && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) &&
+                        !GetRegValue(RegValueNames.hiddenSkinFolders).Contains(skinFolderSelector.Text))
+            {
+                ChangeRegValue(RegValueNames.hiddenSkinFolders, GetRegValue(RegValueNames.hiddenSkinFolders) + "," + skinFolderSelector.Text);
+                hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+            }
+            else if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
+            {
+                ChangeRegValue(RegValueNames.hiddenSkinFolders, skinFolderSelector.Text);
+                hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+            }
+            skinFolderSelector.Text = "All";
+        }
+        else if(sender == showFilteredSkinsButton)
+        {
+            hiddenFoldersText.Text = "";
+            ChangeRegValue(RegValueNames.hiddenSkinFolders, "");
+            if(skinFolderSelector.Text == ",")
+            {
+                skinFolderSelector.Text = "All";
+                DebugLog("You cannot add \",\" as a prefix");
+            }
+        }
+
         if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
             hiddenSkinFoldersList = GetRegValue(RegValueNames.hiddenSkinFolders).Split(',').ToList();
         else
@@ -526,25 +573,22 @@ public class Form1 : Form
         {
             string skinName = skin.FullName.Replace(osuPath + "\\skins\\", "");
 
-            if(skinName != "!!!osu!helper Skin")
+            if(skinName != "!!!osu!helper Skin" && skinName != "Deleted Skins")
             {
-                foreach(string hiddenName in hiddenSkinFoldersList)
+                if(!hiddenSkinFoldersList.Contains(skinName.ElementAt<char>(0).ToString()))
                 {
-                    if(skinName.IndexOf(hiddenName) != 0)
+                    if(skinFolderSelector.Text != "All")
                     {
-                        if(skinFolderSelector.Text != "All")
-                        {
-                            if(skinName.IndexOf(skinFolderSelector.Text) == 0)
-                            {
-                                osuSkinsPathList.Add(skin.FullName);
-                                osuSkinsListBox.Items.Add(skinName);
-                            }
-                        }
-                        else
+                        if(skinName.IndexOf(skinFolderSelector.Text) == 0)
                         {
                             osuSkinsPathList.Add(skin.FullName);
                             osuSkinsListBox.Items.Add(skinName);
                         }
+                    }
+                    else
+                    {
+                        osuSkinsPathList.Add(skin.FullName);
+                        osuSkinsListBox.Items.Add(skinName);
                     }
                 }
             }
@@ -554,7 +598,7 @@ public class Form1 : Form
             Controls.Add(osuSkinsListBox);
         
         osuSkinsListBox.ClearSelected();
-        if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)) && osuSkinsListBox.Items.IndexOf(GetRegValue(RegValueNames.skinName)) != -1)
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)) && osuSkinsListBox.Items.IndexOf(GetRegValue(RegValueNames.skinName)) != -1)
             osuSkinsListBox.SetSelected(osuSkinsListBox.Items.IndexOf(GetRegValue(RegValueNames.skinName)), true);
 
         if(sender == showFilteredSkinsButton)
@@ -565,7 +609,7 @@ public class Form1 : Form
             ChangeRegValue_Click(sender, e);
         }
 
-        if(!osuSkinsListBox.Items.Contains(skinFolderSelector.Text))
+        if(!osuSkinsListBox.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)))
             ChangeRegValue(RegValueNames.skinName, "");
     }
 
@@ -994,6 +1038,7 @@ public class Form1 : Form
 
     private void ChangeRegValue(RegValueNames valueName, string value)
     {
+        //DebugLog("Changed Reg value of " + valueName.ToString() + " to " + value + ".");
         Registry.SetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valueName.ToString(), value);
     }
     
@@ -1001,6 +1046,7 @@ public class Form1 : Form
     {
         try
         {
+            //DebugLog("Reg value of " + valName.ToString() + " is " + Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valName.ToString(), null).ToString() + ".");
             return Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valName.ToString(), null).ToString();
         }
         catch
