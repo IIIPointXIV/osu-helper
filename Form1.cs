@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -29,6 +30,7 @@ public class Form1 : Form
         private CheckBox showComboBurstsBox;
         private CheckBox showHitlightingBox;
         private CheckBox hiddenFoldersText;
+        private CheckBox showHitCircles;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -50,6 +52,7 @@ public class Form1 : Form
         showComboBurstsBox,
         showHitlightingBox,
         hiddenSkinFolders,
+        showHitCircles,
     };
     bool startUpTime = true;
     public void FormLayout()
@@ -247,27 +250,19 @@ public class Form1 : Form
             Left = 102,
             Text = "Hide",
         };
-        /* hideSelectedSkinFolderButton.Click += new EventHandler((sender, ev) =>
-        {
-            //if the saved value is set, add current selection to it, if not just make it current selection
-            ChangeRegValue(RegValueNames.hiddenSkinFolders, (!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) ?
-                            GetRegValue(RegValueNames.hiddenSkinFolders) + "," + skinFolderSelector.Text : skinFolderSelector.Text));
-        }); */
         hideSelectedSkinFolderButton.Click += new EventHandler(SearchOsuSkins);
         Controls.Add(hideSelectedSkinFolderButton);
-
+        
         hiddenFoldersText = new CheckBox()
         {
             Top = 33,
             Font = mainFont,
-            //Width = 500,
             Left = 136,
             Text = "a",
             TextAlign = ContentAlignment.MiddleLeft,
         };
         hiddenFoldersText.Width = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 19;
         
-
         deleteSkinSelectorButton = new System.Windows.Forms.Button()
         {
             Top = 33,
@@ -320,7 +315,6 @@ public class Form1 : Form
             skinFolderSelector.Text = "All";
             ChangeRegValue(RegValueNames.selectedSkinFolder, "All");
         });
-        
 
         writeCurrSkinBox = new CheckBox()
         {
@@ -355,95 +349,8 @@ public class Form1 : Form
         
         disableSkinChangesBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
         Controls.Add(disableSkinChangesBox);
-
-        showComboBurstsBox = new CheckBox()
-        {
-            Height = 25,
-            Width = 297,
-            Font = mainFont,
-            Left = 503,
-            Top = 120,
-            Text = "Combo Bursts",
-            TextAlign = ContentAlignment.MiddleLeft,
-            //ThreeState = true,
-        };
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showComboBurstsBox)))
-            showComboBurstsBox.Checked = bool.Parse(GetRegValue(RegValueNames.showComboBurstsBox));
-        else
-            showComboBurstsBox.Checked = true;
-
-        showComboBurstsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
-        Controls.Add(showComboBurstsBox);
-
-        showHitlightingBox = new CheckBox()
-        {
-            Height = 25,
-            Width = 297,
-            Font = mainFont,
-            Left = 503,
-            Top = 140,
-            Text = "Hit Lighting",
-            TextAlign = ContentAlignment.MiddleLeft,
-        };
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showHitlightingBox)))
-            showHitlightingBox.Checked = bool.Parse(GetRegValue(RegValueNames.showHitlightingBox));
-        else
-            showHitlightingBox.Checked = false;
-
-        showHitlightingBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
-        Controls.Add(showHitlightingBox);
-
-        showSkinNumbersBox = new CheckBox()
-        {
-            Height = 25,
-            Width = 297,
-            Font = mainFont,
-            Left = 503,
-            Top = 60,
-            Text = "Hitcircle Numbers",
-            TextAlign = ContentAlignment.MiddleLeft,
-        };
-        showSkinNumbersBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
-        Controls.Add(showSkinNumbersBox);
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSkinNumbersBox)))
-            showSkinNumbersBox.Checked = bool.Parse(GetRegValue(RegValueNames.showSkinNumbersBox));
-        else
-            showSkinNumbersBox.Checked = true;
-
-        disableCursorTrailBox = new CheckBox()
-        {
-            Height = 25,
-            Width = 297,
-            Font = mainFont,
-            Left = 503,
-            Top = 100,
-            Text = "Cursor Trail",
-            TextAlign = ContentAlignment.MiddleLeft,
-        };
-        disableCursorTrailBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
-        Controls.Add(disableCursorTrailBox);
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.disableCursorTrailBox)))
-            disableCursorTrailBox.Checked = bool.Parse(GetRegValue(RegValueNames.disableCursorTrailBox));
-        else
-            disableCursorTrailBox.Checked = true;
         
-        showSliderEndsBox = new CheckBox()
-        {
-            Height = 25,
-            Width = 297,
-            Font = mainFont,
-            Left = 503,
-            Top = 80,
-            Text = "Slider Ends",
-            TextAlign = ContentAlignment.MiddleLeft,
-        };
-        showSliderEndsBox.CheckedChanged += new EventHandler(ChangeRegValue_Click);
-        Controls.Add(showSliderEndsBox);
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.showSliderEndsBox)))
-            showSliderEndsBox.Checked = bool.Parse(GetRegValue(RegValueNames.showSliderEndsBox));
-        else
-            showSliderEndsBox.Checked = false;
-        
+        SetupSkinChangeCheckBoxes();
         toolTip = new ToolTip();
         toolTip.SetToolTip(searchOsuSkinsButton, "Searches osu! folder for skins");
         toolTip.SetToolTip(changeOsuPathButton, "Set the path that houses the osu!.exe");
@@ -470,7 +377,7 @@ public class Form1 : Form
             FileName =  "",
             Title = "Select osu! directory"
         };
-
+        
         startUpTime = false;
         DirectoryInfo osuPathDI = new DirectoryInfo(osuPath + "\\skins");
         if(osuPathDI.Exists)
@@ -492,6 +399,73 @@ public class Form1 : Form
             {
                 DebugLog("Error searching skins");
             }
+        }
+    }
+
+    private void SetupSkinChangeCheckBoxes()
+    {
+        CheckBox current;
+        int num;
+        bool defaultState;
+
+        for (int i = 0; i <= 5; i++)
+        {
+            defaultState =  false;
+            current = new CheckBox();
+            current.Height = 25;
+            current.Width = 297;
+            current.Font = mainFont;
+            current.Left = 503;
+            current.Top = 60 + (i*20);
+            current.TextAlign = ContentAlignment.MiddleLeft;
+            current.CheckedChanged += new EventHandler(ChangeRegValue_Click);
+            Controls.Add(current);
+            num = Controls.IndexOf(current);
+
+            switch (i)
+            {
+                case 0:
+                    Controls[num].Name = "showComboBurstsBox"; 
+                    Controls[num].Text = "Combo Bursts";
+                    showComboBurstsBox = (CheckBox)Controls[num];
+                    break;
+                case 1:
+                    Controls[num].Name = "showHitlightingBox"; 
+                    Controls[num].Text = "Hit Lighting";
+                    showHitlightingBox = (CheckBox)Controls[num];
+                    break;
+                case 2:
+                    Controls[num].Name = "showSkinNumbersBox"; 
+                    Controls[num].Text = "Hitcircle Numbers";
+                    showSkinNumbersBox = (CheckBox)Controls[num];
+                    defaultState = true;
+                    break;
+                case 3:
+                    Controls[num].Name = "disableCursorTrailBox"; 
+                    Controls[num].Text = "Cursor Trail";
+                    disableCursorTrailBox = (CheckBox)Controls[num];
+                    defaultState = true;
+                    break;
+                case 4:
+                    Controls[num].Name = "showSliderEndsBox"; 
+                    Controls[num].Text = "Slider Ends";
+                    showSliderEndsBox = (CheckBox)Controls[num];
+                    break;
+                case 5:
+                    Controls[num].Name = "showHitCircles";
+                    Controls[num].Text = "Show Hitcircles";
+                    showHitCircles = (CheckBox)Controls[num];
+                    defaultState = true;
+                    break;
+                default:
+                    DebugLog("Error bulding CheckBoxes");
+                    return;
+            }
+
+            if(!String.IsNullOrWhiteSpace(GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[num].Name, true))))
+                ((CheckBox)Controls[num]).Checked = bool.Parse(GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[num].Name, true)));
+            else
+                ((CheckBox)Controls[num]).Checked = defaultState;
         }
     }
 
@@ -680,6 +654,7 @@ public class Form1 : Form
             DisableCursorTrail(disableCursorTrailBox.Checked);
             ShowHideCombobursts(showComboBurstsBox.Checked);
             ShowHitLighting(showHitlightingBox.Checked);
+            ShowHideHitCircles(showHitCircles.Checked);
         }
     }
 
@@ -713,6 +688,34 @@ public class Form1 : Form
     }
 
 //Skin editing
+    private void ShowHideHitCircles(bool show)
+    {
+        List<string> names = new List<string>()
+        {
+            "hitcircle.png",
+            "hitcircle@2x.png",
+            "hitcircleoverlay.png",
+            "hitcircleoverlay@2x.png"
+        };
+        if(show)
+        {
+            foreach(string name in names)
+            {
+                if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
+                    File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+            }
+        }
+        else
+        {
+            Bitmap image = new Bitmap(1,1);
+            foreach(string name in names)
+            {
+                image.Save(Path.Combine(mainSkinPath, name));
+            }
+            image.Dispose();
+        }
+    }
+    
     private void ShowHitLighting(bool show)
     {
         List<string> fileNames = new List<string>()
@@ -1027,9 +1030,15 @@ public class Form1 : Form
             val = showHitlightingBox.Checked.ToString();
             ShowHitLighting(showHitlightingBox.Checked);
         }
+        else if(sender == showHitCircles)
+        {
+            valName = RegValueNames.showHitCircles;
+            val = showHitCircles.Checked.ToString();
+            ShowHideHitCircles(showHitCircles.Checked);
+        }
         else
         {
-            DebugLog("Error with ChangeRegValue_Click");
+            DebugLog("Error with ChangeRegValue_Click" + sender.ToString());
             return;
         }
 
