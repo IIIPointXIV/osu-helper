@@ -54,24 +54,23 @@ public class Form1 : Form
         hiddenSkinFolders,
         showHitCircles,
     };
-    bool startUpTime = true;
+    //bool startUpTime = true;
     public void FormLayout()
     {
         mainFont = new Font("Segoe UI", 12);
-        //registry stuff
-            if(GetRegValue(RegValueNames.osuPath) == null)
+        if(GetRegValue(RegValueNames.osuPath) == null) //If the path is not set in the reg, try to get default directory. If it is not there through an error
+        {
+            osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!");
+            if(!File.Exists(Path.Combine(osuPath, "osu!.exe")))
             {
-                osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!");
-                if(!File.Exists(Path.Combine(osuPath, "osu!.exe")))
-                {
-                    MessageBox.Show("Unable to find valid osu directory. Please select one.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    ChangeOsuPathButton_Click(this, new EventArgs());
-                }
+                MessageBox.Show("Unable to find valid osu directory. Please select one.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ChangeOsuPathButton_Click(this, new EventArgs());
             }
-            else
-                osuPath = GetRegValue(RegValueNames.osuPath);
+        }
+        else
+            osuPath = GetRegValue(RegValueNames.osuPath);
 
-            mainSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
+        mainSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
 
         //general form stuff
             this.MaximizeBox = false;
@@ -83,7 +82,8 @@ public class Form1 : Form
 
         osuSkinsListBox = new ListBox()
         {
-            Size = new Size(500, 676),
+            Width = 500,
+            Height = 676,
             Top = 60,
             Font = mainFont,
             SelectionMode = SelectionMode.MultiExtended,
@@ -97,18 +97,19 @@ public class Form1 : Form
             Font = mainFont,
         };
         Controls.Add(osuPathBox);
-        osuPathBox.KeyPress += (sender, ev) => 
+        osuPathBox.KeyPress += (sender, thisEvent) => 
         {
-            if (ev.KeyChar.Equals((char)13))
+            if (thisEvent.KeyChar.Equals((char)13)) //(char)13 = enter
             {
-                if (!File.Exists(osuPathBox.Text + "\\osu!.exe"))
+                if (!File.Exists(Path.Combine(osuPathBox.Text, "osu!.exe")))
                 {
                     MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
-                osuPath = osuPathBox.Text;
 
-                ChangeRegValue_Click(sender, ev);
-                ev.Handled = true;
+                osuPath = osuPathBox.Text;
+                ChangeRegValue_Click(sender, thisEvent);
+                thisEvent.Handled = true;
             }
         };
 
@@ -187,7 +188,7 @@ public class Form1 : Form
         };
         skinFolderSelector.KeyPress += (sender, ev) =>
         {
-            if(ev.KeyChar.Equals((char)13))
+            if(ev.KeyChar.Equals((char)13)) //13 = enter
             {
                 if(!skinFolderSelector.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(skinFolderSelector.Text) &&
                         skinFolderSelector.Text != "All" && skinFolderSelector.Text != ",")
@@ -211,9 +212,7 @@ public class Form1 : Form
             string[] foldersArr = GetRegValue(RegValueNames.skinFolders).Split(',');
 
             foreach(string name in foldersArr)
-            {
                 skinFolderSelector.Items.Add(name);
-            }
         }
         else
         {
@@ -221,13 +220,10 @@ public class Form1 : Form
             skinFolderSelector.Text = "All";
         }
         if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.selectedSkinFolder)))
-        {
             skinFolderSelector.Text = GetRegValue(RegValueNames.selectedSkinFolder);
-        }
         else
-        {
             skinFolderSelector.Text = "All";
-        }
+        
         Controls.Add(skinFolderSelector);
 
         showFilteredSkinsButton = new System.Windows.Forms.Button()
@@ -261,7 +257,6 @@ public class Form1 : Form
             Text = "a",
             TextAlign = ContentAlignment.MiddleLeft,
         };
-        hiddenFoldersText.Width = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 19;
         
         deleteSkinSelectorButton = new System.Windows.Forms.Button()
         {
@@ -273,9 +268,11 @@ public class Form1 : Form
         };
         hiddenFoldersText.TextChanged += new EventHandler((sender, ev) =>
         {
-            if(TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width == 0)
+            int textWidth = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width;
+            if(textWidth == 0)
             {
-                Controls.Remove(hiddenFoldersText);
+                if(Controls.Contains(hiddenFoldersText))
+                    Controls.Remove(hiddenFoldersText);
                 deleteSkinSelectorButton.Left = 153;
             }
             else
@@ -283,11 +280,12 @@ public class Form1 : Form
                 if(!Controls.Contains(hiddenFoldersText))
                     Controls.Add(hiddenFoldersText);
 
-                deleteSkinSelectorButton.Left = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 152;
-                hiddenFoldersText.Width =  TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width + 30;
+                deleteSkinSelectorButton.Left = textWidth + 152;
+                hiddenFoldersText.Width =  textWidth + 30;
             }
         });
         Controls.Add(deleteSkinSelectorButton);
+        
         if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
             hiddenFoldersText.Text = hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
         else
@@ -297,20 +295,20 @@ public class Form1 : Form
         {
             if(skinFolderSelector.Items.Contains(skinFolderSelector.Text))
             {
-                string[] orig = GetRegValue(RegValueNames.skinFolders).Split(',');
-                string fix = "";
+                string[] origValue = GetRegValue(RegValueNames.skinFolders).Split(',');
+                string fixedValue = "";
 
-                foreach(string name in orig)
+                foreach(string name in origValue)
                 {
                     if(skinFolderSelector.Text != name)
-                        fix += name + ",";
+                        fixedValue += name + ",";
                 }
-                ChangeRegValue(RegValueNames.skinFolders, fix.Remove(fix.Length-1));
+                ChangeRegValue(RegValueNames.skinFolders, fixedValue.Remove(fixedValue.Length-1));
 
                 skinFolderSelector.Items.Remove(skinFolderSelector.Text);
             }
             else if(skinFolderSelector.Text == "All")
-                DebugLog("You can't delete the \"All\" prefix silly");
+                DebugLog("You can't delete the \"All\" prefix silly.");
 
             skinFolderSelector.Text = "All";
             ChangeRegValue(RegValueNames.selectedSkinFolder, "All");
@@ -378,19 +376,16 @@ public class Form1 : Form
             Title = "Select osu! directory"
         };
         
-        startUpTime = false;
+        //startUpTime = false;
         DirectoryInfo osuPathDI = new DirectoryInfo(osuPath + "\\skins");
         if(osuPathDI.Exists)
         {
-            try
-            {
+            if(!Directory.Exists(mainSkinPath))
                 osuPathDI.CreateSubdirectory("!!!osu!helper Skin");
+            
+            if(!Directory.Exists(mainSkinPath.Replace("!!!osu!helper Skin", "Deleted Skins")))
                 osuPathDI.CreateSubdirectory("Deleted Skins");
-            }
-            catch
-            {
-                DebugLog("Error Creating Sub-Directories");
-            }
+
             try
             {
                 SearchOsuSkins(new Object(), new EventArgs());
@@ -406,11 +401,11 @@ public class Form1 : Form
     {
         CheckBox current;
         int num;
-        bool defaultState;
+        bool defaultCheckedState;
 
         for (int i = 0; i <= 5; i++)
         {
-            defaultState =  false;
+            defaultCheckedState =  false;
             current = new CheckBox();
             current.Height = 25;
             current.Width = 297;
@@ -425,68 +420,69 @@ public class Form1 : Form
             switch (i)
             {
                 case 0:
-                    Controls[num].Name = "showComboBurstsBox"; 
+                    Controls[num].Name = RegValueNames.showComboBurstsBox.ToString(); 
                     Controls[num].Text = "Combo Bursts";
                     showComboBurstsBox = (CheckBox)Controls[num];
                     break;
                 case 1:
-                    Controls[num].Name = "showHitlightingBox"; 
+                    Controls[num].Name = RegValueNames.showHitlightingBox.ToString(); 
                     Controls[num].Text = "Hit Lighting";
                     showHitlightingBox = (CheckBox)Controls[num];
                     break;
                 case 2:
-                    Controls[num].Name = "showSkinNumbersBox"; 
+                    Controls[num].Name = RegValueNames.showSkinNumbersBox.ToString();
                     Controls[num].Text = "Hitcircle Numbers";
                     showSkinNumbersBox = (CheckBox)Controls[num];
-                    defaultState = true;
+                    defaultCheckedState = true;
                     break;
                 case 3:
-                    Controls[num].Name = "disableCursorTrailBox"; 
+                    Controls[num].Name = RegValueNames.disableCursorTrailBox.ToString();
                     Controls[num].Text = "Cursor Trail";
                     disableCursorTrailBox = (CheckBox)Controls[num];
-                    defaultState = true;
+                    defaultCheckedState = true;
                     break;
                 case 4:
-                    Controls[num].Name = "showSliderEndsBox"; 
+                    Controls[num].Name = RegValueNames.showSliderEndsBox.ToString();
                     Controls[num].Text = "Slider Ends";
                     showSliderEndsBox = (CheckBox)Controls[num];
                     break;
                 case 5:
-                    Controls[num].Name = "showHitCircles";
+                    Controls[num].Name = RegValueNames.showHitCircles.ToString();
                     Controls[num].Text = "Show Hitcircles";
                     showHitCircles = (CheckBox)Controls[num];
-                    defaultState = true;
+                    defaultCheckedState = true;
                     break;
                 default:
-                    DebugLog("Error bulding CheckBoxes");
+                    DebugLog("Error bulding CheckBoxes. i = " + i.ToString());
                     return;
             }
 
             if(!String.IsNullOrWhiteSpace(GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[num].Name, true))))
                 ((CheckBox)Controls[num]).Checked = bool.Parse(GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[num].Name, true)));
             else
-                ((CheckBox)Controls[num]).Checked = defaultState;
+                ((CheckBox)Controls[num]).Checked = defaultCheckedState;
         }
     }
 
 //MISC Skin handling
     private void ChangeOsuPathButton_Click(object sender, EventArgs e)
     {
-        FolderBrowserDialog directorySelector = new FolderBrowserDialog();
-            directorySelector.ShowNewFolderButton = false;
-            directorySelector.RootFolder = Environment.SpecialFolder.MyComputer;
-            directorySelector.Description = "Select an osu! root directory:";
-            directorySelector.SelectedPath = osuPath;
+        FolderBrowserDialog directorySelector = new FolderBrowserDialog()
+        {
+            ShowNewFolderButton = false,
+            RootFolder = Environment.SpecialFolder.MyComputer,
+            Description = "Select an osu! root directory:",
+            SelectedPath = osuPath,
+        };
 
         DialogResult givenPath = directorySelector.ShowDialog();
         if (givenPath == DialogResult.OK)
         {
-            //check if osu!.exe is present
             if (!File.Exists(directorySelector.SelectedPath + "\\osu!.exe"))
             {
                 MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                ChangeOsuPathButton_Click(sender, e);
                 directorySelector.Dispose();
+                ChangeOsuPathButton_Click(sender, e);
                 return;
             }
             osuPathBox.Text = directorySelector.SelectedPath;
@@ -494,20 +490,17 @@ public class Form1 : Form
             osuPath = directorySelector.SelectedPath;
 
             ChangeRegValue_Click(sender, e);
-            directorySelector.Dispose();
         }
-        //DialogResult result = openFileDialog1.ShowDialog();
+        directorySelector.Dispose();
     }
 
     private void SearchOsuSkins(object sender, EventArgs e)
     {
-        if(startUpTime)
-            return;
-
         List<string> hiddenSkinFoldersList = new List<string>();
 
         if(sender == hideSelectedSkinFolderButton)
         {
+            //Adds selected prefix to hidden list
             if(skinFolderSelector.Text != "All" && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) &&
                         !GetRegValue(RegValueNames.hiddenSkinFolders).Contains(skinFolderSelector.Text))
             {
@@ -528,7 +521,7 @@ public class Form1 : Form
             if(skinFolderSelector.Text == ",")
             {
                 skinFolderSelector.Text = "All";
-                DebugLog("You cannot add \",\" as a prefix");
+                DebugLog("You cannot use \",\" as a prefix");
             }
         }
 
@@ -536,11 +529,12 @@ public class Form1 : Form
             hiddenSkinFoldersList = GetRegValue(RegValueNames.hiddenSkinFolders).Split(',').ToList();
         else
             hiddenSkinFoldersList.Add(osuPath);
-            
+        
+        osuSkinsListBox.ClearSelected();
         osuSkinsListBox.BeginUpdate();
         osuSkinsListBox.Items.Clear();
         osuSkinsPathList.Clear();
-        DirectoryInfo di = new DirectoryInfo(osuPath + "\\skins");
+        DirectoryInfo di = new DirectoryInfo(Path.Combine(osuPath, "skins"));
         var osuSkins = di.GetDirectories();
 
         foreach(DirectoryInfo skin in osuSkins)
@@ -549,11 +543,11 @@ public class Form1 : Form
 
             if(skinName != "!!!osu!helper Skin" && skinName != "Deleted Skins")
             {
-                if(!hiddenSkinFoldersList.Contains(skinName.ElementAt<char>(0).ToString()))
+                if(!hiddenSkinFoldersList.Contains(skinName.ElementAt<char>(0).ToString())) //true if skin does not have prefix that is supposed to be hidden
                 {
                     if(skinFolderSelector.Text != "All")
                     {
-                        if(skinName.IndexOf(skinFolderSelector.Text) == 0)
+                        if(skinName.IndexOf(skinFolderSelector.Text) == 0) //true if skin has prefix that is only supposed to be shown
                         {
                             osuSkinsPathList.Add(skin.FullName);
                             osuSkinsListBox.Items.Add(skinName);
@@ -571,7 +565,7 @@ public class Form1 : Form
         if(!Controls.Contains(osuSkinsListBox))
             Controls.Add(osuSkinsListBox);
         
-        osuSkinsListBox.ClearSelected();
+        //if skin that was last selected is shown, select it
         if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)) && osuSkinsListBox.Items.IndexOf(GetRegValue(RegValueNames.skinName)) != -1)
             osuSkinsListBox.SetSelected(osuSkinsListBox.Items.IndexOf(GetRegValue(RegValueNames.skinName)), true);
 
@@ -582,8 +576,8 @@ public class Form1 : Form
 
             ChangeRegValue_Click(sender, e);
         }
-
-        if(!osuSkinsListBox.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)))
+        
+        if(!osuSkinsListBox.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName))) //if that was last selected is not shown,
             ChangeRegValue(RegValueNames.skinName, "");
     }
 
@@ -599,15 +593,14 @@ public class Form1 : Form
 
     private void DeleteSelectedSkin(object sender, EventArgs e)
     {
-        try
-        {
-            string skinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
-            Directory.Move(skinPath, osuPath + "\\skins\\Deleted Skins\\" + osuSkinsListBox.SelectedItem);
-        }
-        catch
+        if(osuSkinsListBox.SelectedItem == null)
         {
             DebugLog("Find skins first. Error occurred when trying to delete skin");
+            return;
         }
+        string skinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
+        Directory.Move(skinPath, Path.Combine(osuPath,  "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
+        
         osuSkinsPathList.RemoveAt(osuSkinsListBox.SelectedIndex);
         osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
     }
@@ -623,12 +616,12 @@ public class Form1 : Form
 
         DeleteSkinElementsInMainSkin();
         string skinPath;
-        if(osuSkinsListBox.SelectedItems.Count == 1)
+        if(osuSkinsListBox.SelectedItems.Count == 1) //false if multiple skins are selected
             skinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
         else
         {
             Random random = new Random();
-            var randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[random.Next(0, osuSkinsListBox.SelectedItems.Count)]);
+            int randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[random.Next(0, osuSkinsListBox.SelectedItems.Count)]);
             skinPath = osuSkinsPathList[randomSkinIndex];
 
             osuSkinsListBox.ClearSelected();
@@ -643,7 +636,7 @@ public class Form1 : Form
         
         foreach(FileInfo file in di.GetFiles())
         {
-            file.CopyTo(mainSkinPath + "\\" + file.Name, true);
+            file.CopyTo(Path.Combine(mainSkinPath, file.Name), true);
         }
         RecursiveSkinFolderMove(skinPath, "");
 
@@ -664,18 +657,14 @@ public class Form1 : Form
 
         foreach(DirectoryInfo folder in rootFolder.GetDirectories())
         {
-            Directory.CreateDirectory(mainSkinPath + prevFolder +"\\" + folder.Name);
-            DirectoryInfo subFolder = new DirectoryInfo(skinPath + prevFolder + "\\" + folder.Name);
+            Directory.CreateDirectory(Path.Combine(mainSkinPath + prevFolder, folder.Name));
+            DirectoryInfo subFolder = new DirectoryInfo(Path.Combine(skinPath + prevFolder, folder.Name));
 
-            if(subFolder.GetDirectories().Length != 0)
-            {
-                RecursiveSkinFolderMove(skinPath, prevFolder + "\\" + folder.Name);
-            }
+            if(subFolder.GetDirectories().Length != 0) //if there are still more subdirectories
+                RecursiveSkinFolderMove(skinPath, Path.Combine(prevFolder, folder.Name));
 
             foreach(FileInfo file in subFolder.GetFiles())
-            {
-                file.CopyTo(mainSkinPath + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
-            }  
+                file.CopyTo(mainSkinPath + Path.Combine(prevFolder, folder.Name, file.Name), true);
         }
     }
 
@@ -704,19 +693,16 @@ public class Form1 : Form
         if(show)
         {
             foreach(string name in names)
-            {
                 if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
                     File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
-            }
         }
         else
         {
-            Bitmap image = new Bitmap(1,1);
+            Bitmap emptyImage = new Bitmap(1,1);
             foreach(string name in names)
-            {
-                image.Save(Path.Combine(mainSkinPath, name));
-            }
-            image.Dispose();
+                emptyImage.Save(Path.Combine(mainSkinPath, name));
+            
+            emptyImage.Dispose();
         }
     }
     
@@ -752,20 +738,21 @@ public class Form1 : Form
         }
         else
         {
-            Image empty = new Bitmap(1,1);
+            Image emptyImage = new Bitmap(1,1);
             foreach(string name in fileNames)
             {
-                if(File.Exists(Path.Combine(mainSkinPath, name)))
-                    File.Delete(Path.Combine(mainSkinPath, name));
+                /* if(File.Exists(Path.Combine(mainSkinPath, name)))
+                    File.Delete(Path.Combine(mainSkinPath, name)); */
 
-                empty.Save(Path.Combine(mainSkinPath, name));
+                emptyImage.Save(Path.Combine(mainSkinPath, name));
             }
+            emptyImage.Dispose();
         }
     }
 
     private void ShowHideCombobursts(bool show)
     {
-        Bitmap img = new Bitmap(1,1);
+        Bitmap emptyImage = new Bitmap(1,1);
         List<string> fileNames = new List<string>()
         {
             "comboburst",
@@ -780,30 +767,30 @@ public class Form1 : Form
         {
             if(!File.Exists(Path.Combine(mainSkinPath, name + ".png")))
             {
-                img.Save(Path.Combine(mainSkinPath, name + ".png"));
+                emptyImage.Save(Path.Combine(mainSkinPath, name + ".png"));
             }
-            else if(!show)
+            /* else if(!show)
             {
-                img.Save(Path.Combine(mainSkinPath, name + ".png"));
-            }
+                emptyImage.Save(Path.Combine(mainSkinPath, name));
+            } */
         }
 
-        DirectoryInfo di = new DirectoryInfo(mainSkinPath);
-        foreach(FileInfo file in di.GetFiles())
+        //incase there are multiple combobursts
+        if(!show)
         {
-            foreach(string name in fileNames)
+            DirectoryInfo di = new DirectoryInfo(mainSkinPath);
+            foreach(FileInfo file in di.GetFiles()) 
             {
-                if(file.Name.Contains(name))
-                    img.Save(Path.Combine(mainSkinPath, file.Name));
+                foreach(string name in fileNames)
+                    if(file.Name.Contains(name))
+                        emptyImage.Save(Path.Combine(mainSkinPath, file.Name));
             }
+            emptyImage.Dispose();
         }
-        img.Dispose();
     }
     
     private void DisableCursorTrail(bool show)
     {
-        if(GetCurrentSkinPath() == null)
-            return;
         List<string> names = new List<string>()
         {
             "cursortrail@2x.png",
@@ -817,14 +804,15 @@ public class Form1 : Form
         }
         else
         {
-            Bitmap empty = new Bitmap(1, 1);
+            Bitmap emptyImage = new Bitmap(1, 1);
             foreach(string name in names)
             {
                 if(File.Exists(Path.Combine(mainSkinPath, name)))
                     File.Delete(Path.Combine(mainSkinPath, name));
-                empty.Save(Path.Combine(mainSkinPath, name));
+
+                emptyImage.Save(Path.Combine(mainSkinPath, name));
             }
-            empty.Dispose();
+            emptyImage.Dispose();
         }
     }
     
@@ -897,31 +885,21 @@ public class Form1 : Form
         DirectoryInfo rootFolder = new DirectoryInfo(mainSkinPath);
         
         foreach(FileInfo file in rootFolder.GetFiles())
-        {
-            try
-            {
-                file.Delete();
-            }
-            catch{}
-        }
+            file.Delete();
+        
         foreach(DirectoryInfo folder in rootFolder.GetDirectories())
-        {
             Directory.Delete(folder.FullName, true);
-        }
     }
 
     private void ShowHideHitCircleNumbers(bool show)
     {
-        if(osuSkinsPathList.Count == 0 || osuSkinsListBox.SelectedItems.Count == 0)
-            return;
-        
         if(show) //show skin numbers 
-            File.Copy(Path.Combine(osuSkinsPathList[osuSkinsListBox.SelectedIndex], "skin.ini"), Path.Combine(mainSkinPath, "skin.ini"), true);
+            File.Copy(Path.Combine(GetCurrentSkinPath(), "skin.ini"), Path.Combine(mainSkinPath, "skin.ini"), true);
         else //hide skin numbers
             EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
     }
 
-    private void EditSkinIni(string searchFor, string replaceWith, string fallBackAdd)
+    private void EditSkinIni(string searchFor, string replaceWith, string fallBackSearch)
     {
         string skinINIPath = Path.Combine(mainSkinPath, "skin.ini");
         File.Copy(skinINIPath, skinINIPath.Replace("skin.ini", "skin.ini.temp"));
@@ -953,7 +931,7 @@ public class Form1 : Form
 
             while((currLine = readerNew.ReadLine()) != null)
             {   
-                if(currLine.Contains(fallBackAdd))
+                if(currLine.Contains(fallBackSearch))
                 {
                     
                     writerNew.WriteLine(currLine);
@@ -962,7 +940,9 @@ public class Form1 : Form
                 }
                 writerNew.WriteLine(currLine);
             }
+            writerNew.Close();
             writerNew.Dispose();
+            readerNew.Close();
             readerNew.Dispose();
         }
         
@@ -1068,7 +1048,7 @@ public class Form1 : Form
     {
         if(osuSkinsListBox.SelectedItems.Count == 1)
             return osuSkinsPathList[osuSkinsListBox.SelectedIndex];
-        else if(GetRegValue(RegValueNames.skinName) == null || osuSkinsListBox.SelectedItems.Count > 1 || osuSkinsListBox.SelectedItems.Count == 1)
+        else if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName)) || osuSkinsListBox.SelectedItems.Count > 1)
             DebugLog("Multiple/no skins selected. Unable to get skin path.");
         else
             return Path.Combine(osuPath, "skins", GetRegValue(RegValueNames.skinName));
@@ -1086,7 +1066,7 @@ public class Form1 : Form
         Console.WriteLine(log);
     }
 
-    private void DebugLog(bool log )
+    private void DebugLog(bool log)
     {
         Console.WriteLine(log);
     }
