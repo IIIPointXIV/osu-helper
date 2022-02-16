@@ -172,7 +172,7 @@ public class Form1 : Form
         {
             Left = 298,
             Top = 737,
-            Width = 140,
+            Width = 139,
             Font = mainFont,
             Text = "Open Skin Folder",
         };
@@ -613,6 +613,11 @@ public class Form1 : Form
             DebugLog("Please select skin before trying to change to it.");
             return;
         }
+        foreach (Control obj in Controls)
+        {
+            if(obj != null)
+                obj.Enabled = false;
+        }
 
         DeleteSkinElementsInMainSkin();
         string skinPath;
@@ -638,7 +643,7 @@ public class Form1 : Form
         {
             file.CopyTo(Path.Combine(mainSkinPath, file.Name), true);
         }
-        RecursiveSkinFolderMove(skinPath, "");
+        RecursiveSkinFolderMove(skinPath, "\\");
 
         if(!disableSkinChangesBox.Checked)
         {
@@ -649,6 +654,11 @@ public class Form1 : Form
             ShowHitLighting(showHitlightingBox.Checked);
             ShowHideHitCircles(showHitCircles.Checked);
         }
+        foreach (Control obj in Controls)
+        {
+            if(obj != null)
+                obj.Enabled = true;
+        }
     }
 
     private void RecursiveSkinFolderMove(string skinPath, string prevFolder)
@@ -657,17 +667,20 @@ public class Form1 : Form
 
         foreach(DirectoryInfo folder in rootFolder.GetDirectories())
         {
-            Directory.CreateDirectory(Path.Combine(mainSkinPath + prevFolder, folder.Name));
-            DirectoryInfo subFolder = new DirectoryInfo(Path.Combine(skinPath + prevFolder, folder.Name));
+            Directory.CreateDirectory(mainSkinPath + prevFolder +"\\" + folder.Name);
+            DirectoryInfo subFolder = new DirectoryInfo(skinPath + prevFolder + "\\" + folder.Name);
 
-            if(subFolder.GetDirectories().Length != 0) //if there are still more subdirectories
-                RecursiveSkinFolderMove(skinPath, Path.Combine(prevFolder, folder.Name));
+            if(subFolder.GetDirectories().Length != 0)
+            {
+                RecursiveSkinFolderMove(skinPath, prevFolder + "\\" + folder.Name);
+            }
 
             foreach(FileInfo file in subFolder.GetFiles())
-                file.CopyTo(mainSkinPath + Path.Combine(prevFolder, folder.Name, file.Name), true);
+            {
+                file.CopyTo(mainSkinPath + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
+            }  
         }
     }
-
     private void RandomSkin_Click(object sender, EventArgs e)
     {
         var randomNumber = new Random();
@@ -952,6 +965,10 @@ public class Form1 : Form
 //Edit Reg Stuff
     private void ChangeRegValue_Click(object sender, EventArgs e)
     {
+        if(osuSkinsListBox.SelectedIndex == -1)
+        {
+            return;
+        }
         RegValueNames valName;
         string val = "";
         if(sender == writeCurrSkinBox)
