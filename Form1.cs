@@ -54,7 +54,6 @@ public class Form1 : Form
         hiddenSkinFolders,
         showHitCircles,
     };
-    //bool startUpTime = true;
     public void FormLayout()
     {
         mainFont = new Font("Segoe UI", 12);
@@ -349,7 +348,7 @@ public class Form1 : Form
         Controls.Add(disableSkinChangesBox);
         
         SetupSkinChangeCheckBoxes();
-        toolTip = new ToolTip();
+        toolTip = new ToolTip();{
         toolTip.SetToolTip(searchOsuSkinsButton, "Searches osu! folder for skins");
         toolTip.SetToolTip(changeOsuPathButton, "Set the path that houses the osu!.exe");
         toolTip.SetToolTip(writeCurrSkinBox, "Writes the name of the current skin to a text\nfile in the \"Skins\" folder. Helpful for streamers.");
@@ -366,7 +365,7 @@ public class Form1 : Form
         toolTip.SetToolTip(hideSelectedSkinFolderButton, "Hides skins with selected prefix.\nPress show button to reset them.");
         toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
         toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
-        toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");
+        toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");}
 
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
         {
@@ -376,7 +375,6 @@ public class Form1 : Form
             Title = "Select osu! directory"
         };
         
-        //startUpTime = false;
         DirectoryInfo osuPathDI = new DirectoryInfo(osuPath + "\\skins");
         if(osuPathDI.Exists)
         {
@@ -593,6 +591,7 @@ public class Form1 : Form
 
     private void DeleteSelectedSkin(object sender, EventArgs e)
     {
+        EnableAllControls(false);
         if(osuSkinsListBox.SelectedItem == null)
         {
             DebugLog("Find skins first. Error occurred when trying to delete skin");
@@ -603,6 +602,7 @@ public class Form1 : Form
         
         osuSkinsPathList.RemoveAt(osuSkinsListBox.SelectedIndex);
         osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
+        EnableAllControls(true);
     }
 
 //Skin Switching
@@ -613,11 +613,7 @@ public class Form1 : Form
             DebugLog("Please select skin before trying to change to it.");
             return;
         }
-        foreach (Control obj in Controls)
-        {
-            if(obj != null)
-                obj.Enabled = false;
-        }
+        EnableAllControls(false);
 
         DeleteSkinElementsInMainSkin();
         string skinPath;
@@ -654,11 +650,7 @@ public class Form1 : Form
             ShowHitLighting(showHitlightingBox.Checked);
             ShowHideHitCircles(showHitCircles.Checked);
         }
-        foreach (Control obj in Controls)
-        {
-            if(obj != null)
-                obj.Enabled = true;
-        }
+        EnableAllControls(true);
     }
 
     private void RecursiveSkinFolderMove(string skinPath, string prevFolder)
@@ -681,8 +673,10 @@ public class Form1 : Form
             }  
         }
     }
+    
     private void RandomSkin_Click(object sender, EventArgs e)
     {
+        EnableAllControls(false);
         var randomNumber = new Random();
         osuSkinsListBox.ClearSelected();
         osuSkinsListBox.SetSelected(randomNumber.Next(0, osuSkinsListBox.Items.Count), true);
@@ -692,6 +686,7 @@ public class Form1 : Form
 //Skin editing
     private void ShowHideHitCircles(bool show)
     {
+        EnableAllControls(false);
         List<string> names = new List<string>()
         {
             "hitcircle.png",
@@ -717,10 +712,12 @@ public class Form1 : Form
             
             emptyImage.Dispose();
         }
+        EnableAllControls(true);
     }
     
     private void ShowHitLighting(bool show)
     {
+        EnableAllControls(false);
         List<string> fileNames = new List<string>()
         {
             "lighting.png",
@@ -761,10 +758,12 @@ public class Form1 : Form
             }
             emptyImage.Dispose();
         }
+        EnableAllControls(true);
     }
 
     private void ShowHideCombobursts(bool show)
     {
+        EnableAllControls(false);
         Bitmap emptyImage = new Bitmap(1,1);
         List<string> fileNames = new List<string>()
         {
@@ -800,10 +799,12 @@ public class Form1 : Form
             }
             emptyImage.Dispose();
         }
+        EnableAllControls(true);
     }
     
     private void DisableCursorTrail(bool show)
     {
+        EnableAllControls(false);
         List<string> names = new List<string>()
         {
             "cursortrail@2x.png",
@@ -827,10 +828,12 @@ public class Form1 : Form
             }
             emptyImage.Dispose();
         }
+        EnableAllControls(true);
     }
     
     private void ShowHideSliderEnds(bool show)
     {
+        EnableAllControls(false);
         string[] sliderEnds =
         {
             "sliderendcircle.png",
@@ -891,6 +894,7 @@ public class Form1 : Form
         }
         emptyImage.Dispose();
         sliderImage.Dispose();
+        EnableAllControls(true);
     }
     
     private void DeleteSkinElementsInMainSkin()
@@ -906,10 +910,12 @@ public class Form1 : Form
 
     private void ShowHideHitCircleNumbers(bool show)
     {
+        EnableAllControls(false);
         if(show) //show skin numbers 
             File.Copy(Path.Combine(GetCurrentSkinPath(), "skin.ini"), Path.Combine(mainSkinPath, "skin.ini"), true);
         else //hide skin numbers
             EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
+        EnableAllControls(true);
     }
 
     private void EditSkinIni(string searchFor, string replaceWith, string fallBackSearch)
@@ -1061,6 +1067,15 @@ public class Form1 : Form
     }
 
 //MISC
+    private void EnableAllControls(bool enable)
+    {
+        foreach (Control obj in Controls)
+        {
+            if(obj != null)
+                obj.Enabled = enable;
+        }
+    }
+
     private string GetCurrentSkinPath()
     {
         if(osuSkinsListBox.SelectedItems.Count == 1)
