@@ -7,9 +7,9 @@ namespace osu_helper
     {
         public static Form1 form = new Form1();
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            form.FormLayout();
+            form.FormLayout((args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : true));
             Application.Run(form);
         }
     }
