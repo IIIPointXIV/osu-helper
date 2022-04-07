@@ -376,7 +376,7 @@ public class Form1 : Form
             toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
             toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
             toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");
-            toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
+            //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
         }
 
         openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
@@ -416,6 +416,8 @@ public class Form1 : Form
 
         for (int i = 0; i <= 6; i++)
         {
+            if(i == 6)
+                continue;
             defaultCheckedState =  false;
             current = new CheckBox();
             current.Height = 25;
@@ -706,7 +708,7 @@ public class Form1 : Form
             ShowCombobursts(showComboBurstsBox.Checked);
             ShowHitLighting(showHitlightingBox.Checked);
             ShowHitCircles(showHitCirclesBox.Checked);
-            MakeInstafade(makeInstafadeBox.CheckState);
+            //MakeInstafade(makeInstafadeBox.CheckState);
             DebugLog("[FINISHED EDITING SKIN]", false);
         }
         EnableAllControls(true);
