@@ -66,7 +66,7 @@ public class Form1 : Form
         spamLogs = spamLogsArgs;
         DebugLog("[STARTING UP]", false);
         mainFont = new Font("Segoe UI", 12);
-        if(GetRegValue(RegValueNames.osuPath) == null) //If the path is not set in the reg, try to get default directory. If it is not there through an error
+        if(GetRegValue(RegValueNames.osuPath) == null) //If the path is not set in the reg, try to get default directory. If it is not there throw an error
         {
             osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!");
             if(!File.Exists(Path.Combine(osuPath, "osu!.exe")))

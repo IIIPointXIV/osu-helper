@@ -429,19 +429,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\IIIPointXIV\\.nuget\\packages\\": {}
+    "C:\\Users\\zbeyer\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Code\\osu!helper\\osu!helper.csproj",
+      "projectUniqueName": "C:\\Users\\zbeyer\\Documents\\GitHub\\osu-helper\\osu!helper.csproj",
       "projectName": "osu!helper",
-      "projectPath": "F:\\Code\\osu!helper\\osu!helper.csproj",
-      "packagesPath": "C:\\Users\\IIIPointXIV\\.nuget\\packages\\",
-      "outputPath": "F:\\Code\\osu!helper\\obj\\",
+      "projectPath": "C:\\Users\\zbeyer\\Documents\\GitHub\\osu-helper\\osu!helper.csproj",
+      "packagesPath": "C:\\Users\\zbeyer\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\zbeyer\\Documents\\GitHub\\osu-helper\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\IIIPointXIV\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\zbeyer\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net4.7.2"
@@ -472,7 +472,7 @@
             "autoReferenced": true
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files (x86)\\dotnet\\sdk\\6.0.101\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files (x86)\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
       }
     },
     "runtimes": {
