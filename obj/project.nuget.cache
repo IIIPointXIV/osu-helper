@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "kZvnlSpiTTX6lAjr8AKOtKk3CGIyuaj1BBPsNoem90lptxZ+47MT8Q92OUHvj6I2flh20ynGg4WZIlrZl9Ef/A==",
+  "dgSpecHash": "5e17qVes1lhOZ/WV5eXsWHVZ7p5XO9yIzS+6aiZPGl5E+nmYh/NdUeKUKyHWhW6tMjO0oj+OCCWKYdurWZ77eQ==",
   "success": true,
   "projectFilePath": "C:\\Users\\zbeyer\\Documents\\GitHub\\osu-helper\\osu!helper.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\zbeyer\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.2\\microsoft.netframework.referenceassemblies.1.0.2.nupkg.sha512",
-    "C:\\Users\\zbeyer\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net472\\1.0.2\\microsoft.netframework.referenceassemblies.net472.1.0.2.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }

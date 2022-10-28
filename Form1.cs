@@ -33,6 +33,7 @@ public class Form1 : Form
         private CheckBox hiddenFoldersText;
         private CheckBox showHitCirclesBox;
         private CheckBox makeInstafadeBox;
+        private CheckBox expandingCursorBox;
     private ToolTip toolTip;
     private ComboBox skinFolderSelector;
     private Font mainFont;
@@ -56,6 +57,7 @@ public class Form1 : Form
         hiddenSkinFolders,
         showHitCircles,
         makeInstafadeBox,
+        expandingCursor,
     };
     bool debugMode = true;
     bool spamLogs = false;
@@ -96,7 +98,11 @@ public class Form1 : Form
             Font = mainFont,
             SelectionMode = SelectionMode.MultiExtended,
         };
-
+        osuSkinsListBox.MouseUp += (sender, ev) =>
+        {
+            if(osuSkinsListBox.SelectedItems.Count == 1)
+                ChangeRegValue(RegValueNames.skinName, osuSkinsListBox.SelectedItem.ToString());
+        };
         osuPathBox = new System.Windows.Forms.TextBox()
         {
             Text = osuPath,
@@ -194,6 +200,7 @@ public class Form1 : Form
             Height = 23,
             Width = 43,
         };
+
         skinFolderSelector.KeyPress += (sender, ev) =>
         {
             if(ev.KeyChar.Equals((char)13)) //13 = enter
@@ -376,6 +383,7 @@ public class Form1 : Form
             toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
             toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
             toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");
+            toolTip.SetToolTip(expandingCursorBox, "Checked means the cursor will expand on click");
             //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
         }
 
@@ -412,13 +420,13 @@ public class Form1 : Form
     {
         CheckBox current;
         int num;
-        bool defaultCheckedState;
+        CheckState defaultCheckedState;
 
         for (int i = 0; i <= 6; i++)
         {
-            if(i == 6)
+            if(i == 7)
                 continue;
-            defaultCheckedState =  false;
+            defaultCheckedState =  CheckState.Unchecked;
             current = new CheckBox();
             current.Height = 25;
             current.Width = 297;
@@ -427,6 +435,7 @@ public class Form1 : Form
             current.Top = 60 + (i*20);
             current.TextAlign = ContentAlignment.MiddleLeft;
             current.CheckStateChanged += new EventHandler(ChangeRegValue_Click);
+            current.ThreeState = true;
             Controls.Add(current);
             num = Controls.IndexOf(current);
 
@@ -446,13 +455,13 @@ public class Form1 : Form
                     Controls[num].Name = RegValueNames.showSkinNumbersBox.ToString();
                     Controls[num].Text = "Hitcircle Numbers";
                     showSkinNumbersBox = (CheckBox)Controls[num];
-                    defaultCheckedState = true;
+                    defaultCheckedState = CheckState.Checked;
                     break;
                 case 3:
                     Controls[num].Name = RegValueNames.disableCursorTrailBox.ToString();
                     Controls[num].Text = "Cursor Trail";
                     disableCursorTrailBox = (CheckBox)Controls[num];
-                    defaultCheckedState = true;
+                    defaultCheckedState = CheckState.Checked;
                     break;
                 case 4:
                     Controls[num].Name = RegValueNames.showSliderEndsBox.ToString();
@@ -463,13 +472,19 @@ public class Form1 : Form
                     Controls[num].Name = RegValueNames.showHitCircles.ToString();
                     Controls[num].Text = "Show Hitcircles";
                     showHitCirclesBox = (CheckBox)Controls[num];
-                    defaultCheckedState = true;
+                    defaultCheckedState = CheckState.Checked;
                     break;
                 case 6:
+                    Controls[num].Name = RegValueNames.expandingCursor.ToString();
+                    Controls[num].Text = "Expanding Cursor";
+                    expandingCursorBox = (CheckBox)Controls[num];
+                    defaultCheckedState = CheckState.Checked;
+                    break;
+                case 7:
                     Controls[num].Name = RegValueNames.makeInstafadeBox.ToString();
                     Controls[num].Text = "Make Instafade";
                     makeInstafadeBox = (CheckBox)Controls[num];
-                    makeInstafadeBox.ThreeState = true;
+                    defaultCheckedState = CheckState.Indeterminate;
                     break;
                 default:
                     DebugLog("Error bulding CheckBoxes. i = " + i.ToString(), true);
@@ -494,7 +509,7 @@ public class Form1 : Form
                     ((CheckBox)Controls[num]).CheckState = CheckState.Unchecked;
                     break;
                 default:
-                    ((CheckBox)Controls[num]).Checked = defaultCheckedState;
+                    ((CheckBox)Controls[num]).CheckState = defaultCheckedState;
                     break;
             }
             DebugLog($"CheckBox Name is: {Controls[num].Name} | Text is: {Controls[num].Text} | Checked: {((CheckBox)Controls[num]).Checked.ToString()}", false);
@@ -702,12 +717,12 @@ public class Form1 : Form
         if(!disableSkinChangesBox.Checked)
         {
             DebugLog("[STARTING EDITING SKIN]", false);
-            ShowHitCircleNumbers(showSkinNumbersBox.Checked);
-            ShowSliderEnds(showSliderEndsBox.Checked);
-            DisableCursorTrail(disableCursorTrailBox.Checked);
-            ShowCombobursts(showComboBurstsBox.Checked);
-            ShowHitLighting(showHitlightingBox.Checked);
-            ShowHitCircles(showHitCirclesBox.Checked);
+            ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
+            ShowSliderEnds(showSliderEndsBox.CheckState);
+            DisableCursorTrail(disableCursorTrailBox.CheckState);
+            ShowCombobursts(showComboBurstsBox.CheckState);
+            ShowHitLighting(showHitlightingBox.CheckState);
+            ShowHitCircles(showHitCirclesBox.CheckState);
             //MakeInstafade(makeInstafadeBox.CheckState);
             DebugLog("[FINISHED EDITING SKIN]", false);
         }
@@ -748,6 +763,19 @@ public class Form1 : Form
     }
 
 //Skin editing
+    private void ChangeExpandingCursor(CheckState expand)
+    {
+        if(expand == CheckState.Indeterminate)
+            return;
+
+        EnableAllControls(false);
+        if(expand == CheckState.Checked)
+            EditSkinIni("CursorExpand:", "CursorExpand: 1", "[General]");
+        else
+            EditSkinIni("CursorExpand:", "CursorExpand: 0", "[General]");
+        EnableAllControls(true);
+    }
+    
     private void MakeInstafade(CheckState instafade)
     {
         return;
@@ -827,13 +855,19 @@ public class Form1 : Form
             hitcircleOverlayImage.Dispose();
             hitcircleGraphics.Dispose();
             EditSkinIni("HitCircleOverlap:", "HitCircleOverlap: " + imageWidth*2, "[Fonts]");
-            ShowHitCircles(false);
+            ShowHitCircles(CheckState.Unchecked);
         }
     }
 
-    private void ShowHitCircles(bool show)
+    private void ShowHitCircles(CheckState showState)
     {
-        DebugLog($"ShowHitCircles({show}) called", false);
+        DebugLog($"ShowHitCircles({showState}) called", false);
+
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         List<string> names = new List<string>()
         {
@@ -873,9 +907,15 @@ public class Form1 : Form
         EnableAllControls(true);
     }
     
-    private void ShowHitLighting(bool show)
+    private void ShowHitLighting(CheckState showState)
     {
-        DebugLog($"ShowHitLighting({show}) called", false);
+        DebugLog($"ShowHitLighting({showState}) called", false);
+
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         List<string> fileNames = new List<string>()
         {
@@ -926,9 +966,15 @@ public class Form1 : Form
         EnableAllControls(true);
     }
 
-    private void ShowCombobursts(bool show)
+    private void ShowCombobursts(CheckState showState)
     {
-        DebugLog($"ShowCombobursts({show}) called", false);
+        DebugLog($"ShowCombobursts({showState}) called", false);
+
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         Bitmap emptyImage = new Bitmap(1,1);
         List<string> fileNames = new List<string>()
@@ -971,9 +1017,15 @@ public class Form1 : Form
         EnableAllControls(true);
     }
     
-    private void DisableCursorTrail(bool show)
+    private void DisableCursorTrail(CheckState showState)
     {
-        DebugLog($"DisableCursorTrail({show}) called", false);
+        DebugLog($"DisableCursorTrail({showState}) called", false);
+
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         List<string> names = new List<string>()
         {
@@ -1006,9 +1058,15 @@ public class Form1 : Form
         EnableAllControls(true);
     }
     
-    private void ShowSliderEnds(bool show)
+    private void ShowSliderEnds(CheckState showState)
     {
-        DebugLog($"ShowSliderEnds({show}) called", false);
+        DebugLog($"ShowSliderEnds({showState}) called", false);
+
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         string[] sliderEnds =
         {
@@ -1099,8 +1157,15 @@ public class Form1 : Form
         }
     }
 
-    private void ShowHitCircleNumbers(bool show)
+    private void ShowHitCircleNumbers(CheckState showState)
     {
+        DebugLog($"ShowHitCircleNumbers({showState}) called", false);
+        
+        if(showState == CheckState.Indeterminate)
+            return;
+
+        bool show = (showState == CheckState.Checked);
+
         EnableAllControls(false);
         if(show) //show skin numbers
         {
@@ -1186,21 +1251,21 @@ public class Form1 : Form
         else if(sender == showSkinNumbersBox)
         {
             valName = RegValueNames.showSkinNumbersBox;
-            val = showSkinNumbersBox.Checked.ToString();
-            ShowHitCircleNumbers(showSkinNumbersBox.Checked);
+            val = showSkinNumbersBox.CheckState.ToString();
+            ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
         }
         else if(sender == showSliderEndsBox)
         {
             valName = RegValueNames.showSliderEndsBox;
-            val = showSliderEndsBox.Checked.ToString();
-            ShowSliderEnds(showSliderEndsBox.Checked);
+            val = showSliderEndsBox.CheckState.ToString();
+            ShowSliderEnds(showSliderEndsBox.CheckState);
         }
         else if(sender == disableSkinChangesBox)
         {
             if(!disableSkinChangesBox.Checked)
             {
-                ShowHitCircleNumbers(showSkinNumbersBox.Checked);
-                ShowSliderEnds(showSliderEndsBox.Checked);
+                ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
+                ShowSliderEnds(showSliderEndsBox.CheckState);
             }
             valName = RegValueNames.disableSkinChangesBox;
             val = disableSkinChangesBox.Checked.ToString();
@@ -1208,8 +1273,8 @@ public class Form1 : Form
         else if(sender == disableCursorTrailBox)
         {
             valName = RegValueNames.disableCursorTrailBox;
-            val = disableCursorTrailBox.Checked.ToString();
-            DisableCursorTrail(disableCursorTrailBox.Checked);
+            val = disableCursorTrailBox.CheckState.ToString();
+            DisableCursorTrail(disableCursorTrailBox.CheckState);
         }
         else if(sender == showFilteredSkinsButton)
         {
@@ -1219,20 +1284,26 @@ public class Form1 : Form
         else if(sender == showComboBurstsBox)
         {
             valName = RegValueNames.showComboBurstsBox;
-            val = showComboBurstsBox.Checked.ToString();
-            ShowCombobursts(showComboBurstsBox.Checked);
+            val = showComboBurstsBox.CheckState.ToString();
+            ShowCombobursts(showComboBurstsBox.CheckState);
         }
         else if(sender == showHitlightingBox)
         {
             valName = RegValueNames.showHitlightingBox;
-            val = showHitlightingBox.Checked.ToString();
-            ShowHitLighting(showHitlightingBox.Checked);
+            val = showHitlightingBox.CheckState.ToString();
+            ShowHitLighting(showHitlightingBox.CheckState);
         }
         else if(sender == showHitCirclesBox)
         {
             valName = RegValueNames.showHitCircles;
-            val = showHitCirclesBox.Checked.ToString();
-            ShowHitCircles(showHitCirclesBox.Checked);
+            val = showHitCirclesBox.CheckState.ToString();
+            ShowHitCircles(showHitCirclesBox.CheckState);
+        }
+        else if(sender == expandingCursorBox)
+        {
+            valName = RegValueNames.expandingCursor;
+            val = expandingCursorBox.CheckState.ToString();
+            ShowHitCircles(expandingCursorBox.CheckState);
         }
         else if(sender == makeInstafadeBox)
         {
