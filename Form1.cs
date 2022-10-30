@@ -566,7 +566,12 @@ public class Form1 : Form
             else if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)))
             {
                 ChangeRegValue(RegValueNames.hiddenSkinFilter, skinFilterSelector.Text);
-                hiddenSkinFiltersText.Text = GetRegValue(RegValueNames.hiddenSkinFilter).Replace(",", ", ");
+                hiddenSkinFiltersText.Text = skinFilterSelector.Text;
+            }
+            if(!skinFilterSelector.Items.Contains(skinFilterSelector.Text))
+            {
+                skinFilterSelector.Items.Add(skinFilterSelector.Text);
+                ChangeRegValue(RegValueNames.skinFilters, (String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFilters)) ? "" : ",") + skinFilterSelector.Text);
             }
             skinFilterSelector.Text = "All";
         }
