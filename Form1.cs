@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Net.Mime;
 using System.Reflection;
 using System.Linq;
@@ -10,7 +11,7 @@ using System.IO;
 using System.Windows.Forms;
 public class Form1 : Form
 {
-    private TextBox osuPathBox;
+    private TextBox osuFolderPathBox;
     // Buttons
         private Button changeOsuPathButton;
         private Button searchOsuSkinsButton;
@@ -19,7 +20,7 @@ public class Form1 : Form
         private Button randomSkinButton;
         private Button openSkinFolderButton;
         private Button showFilteredSkinsButton;
-        private Button hideSelectedSkinFolderButton;
+        private Button hideSelectedSkinFilterButton;
         private Button deleteSkinSelectorButton;
     private System.Windows.Forms.OpenFileDialog openFileDialog1;
     // CheckBoxes
@@ -29,32 +30,32 @@ public class Form1 : Form
         private CheckBox disableSkinChangesBox;
         private CheckBox disableCursorTrailBox;
         private CheckBox showComboBurstsBox;
-        private CheckBox showHitlightingBox;
-        private CheckBox hiddenFoldersText;
+        private CheckBox showHitLightingBox;
+        private CheckBox hiddenSkinFiltersText;
         private CheckBox showHitCirclesBox;
         private CheckBox makeInstafadeBox;
         private CheckBox expandingCursorBox;
     private ToolTip toolTip;
-    private ComboBox skinFolderSelector;
+    private ComboBox skinFilterSelector;
     private Font mainFont;
     private ListBox osuSkinsListBox;
     private List<string> osuSkinsPathList = new List<string>();
     private string osuPath;
-    private string mainSkinPath;
+    private string helperSkinPath;
     private enum RegValueNames
     {
         skinName,
         disableCursorTrailBox,
         osuPath,
-        selectedSkinFolder,
+        selectedSkinFilter,
         showSkinNumbersBox,
-        skinFolders,
+        skinFilters,
         writeCurrSkinToTXT,
         showSliderEndsBox,
         disableSkinChangesBox,
         showComboBurstsBox,
-        showHitlightingBox,
-        hiddenSkinFolders,
+        showHitLightingBox,
+        hiddenSkinFilter,
         showHitCircles,
         makeInstafadeBox,
         expandingCursor,
@@ -68,6 +69,15 @@ public class Form1 : Form
         spamLogs = spamLogsArgs;
         DebugLog("[STARTING UP]", false);
         mainFont = new Font("Segoe UI", 12);
+
+        openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
+        {
+            InitialDirectory =  osuPath,
+            Filter = "Directory|*.directory",
+            FileName =  "",
+            Title = "Select osu! directory"
+        };
+
         if(GetRegValue(RegValueNames.osuPath) == null) //If the path is not set in the reg, try to get default directory. If it is not there throw an error
         {
             osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!");
@@ -80,7 +90,7 @@ public class Form1 : Form
         else
             osuPath = GetRegValue(RegValueNames.osuPath);
 
-        mainSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
+        helperSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
 
         //general form stuff
             this.MaximizeBox = false;
@@ -103,25 +113,27 @@ public class Form1 : Form
             if(osuSkinsListBox.SelectedItems.Count == 1)
                 ChangeRegValue(RegValueNames.skinName, osuSkinsListBox.SelectedItem.ToString());
         };
-        osuPathBox = new System.Windows.Forms.TextBox()
+        
+        osuFolderPathBox = new System.Windows.Forms.TextBox()
         {
             Text = osuPath,
             Left = 87,
             Width = 300,
             Font = mainFont,
         };
-        Controls.Add(osuPathBox);
-        osuPathBox.KeyPress += (sender, thisEvent) => 
+        Controls.Add(osuFolderPathBox);
+        osuFolderPathBox.KeyPress += (sender, thisEvent) => 
         {
-            if (thisEvent.KeyChar.Equals((char)13)) //(char)13 = enter
+            if (thisEvent.KeyChar.Equals(Keys.Enter) || thisEvent.KeyChar.Equals(Keys.Return))
             {
-                if (!File.Exists(Path.Combine(osuPathBox.Text, "osu!.exe")))
+                if (!File.Exists(Path.Combine(osuFolderPathBox.Text, "osu!.exe")))
                 {
                     MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                osuPath = osuPathBox.Text;
+                osuPath = osuFolderPathBox.Text;
+                helperSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
                 ChangeRegValue_Click(sender, thisEvent);
                 thisEvent.Handled = true;
             }
@@ -179,7 +191,7 @@ public class Form1 : Form
             Font = mainFont,
             Text = "Delete Skin",
         };
-        deleteSkinButton.Click += new EventHandler(DeleteSelectedSkin);
+        deleteSkinButton.Click += new EventHandler(DeleteSelectedSkin_Click);
         Controls.Add(deleteSkinButton);
 
         openSkinFolderButton = new System.Windows.Forms.Button()
@@ -190,56 +202,54 @@ public class Form1 : Form
             Font = mainFont,
             Text = "Open Skin Folder",
         };
-        openSkinFolderButton.Click += new EventHandler(OpenSkinFolder);
+        openSkinFolderButton.Click += new EventHandler(OpenSkinFolder_Click);
         Controls.Add(openSkinFolderButton);
 
-        skinFolderSelector = new ComboBox()
+        skinFilterSelector = new ComboBox()
         {
             Top = 30,
             Font = mainFont,
             Height = 23,
             Width = 43,
         };
-
-        skinFolderSelector.KeyPress += (sender, ev) =>
+        skinFilterSelector.KeyPress += (sender, thisEvent) =>
         {
-            if(ev.KeyChar.Equals((char)13)) //13 = enter
+            if (thisEvent.KeyChar.Equals(Keys.Enter) || thisEvent.KeyChar.Equals(Keys.Return))
             {
-                if(!skinFolderSelector.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(skinFolderSelector.Text) &&
-                        skinFolderSelector.Text != "All" && skinFolderSelector.Text != ",")
+                if(!skinFilterSelector.Items.Contains(skinFilterSelector.Text) && !String.IsNullOrWhiteSpace(skinFilterSelector.Text) &&
+                        skinFilterSelector.Text != "All" && skinFilterSelector.Text != ",")
                 {
-                    skinFolderSelector.Items.Add(skinFolderSelector.Text);
-                    ChangeRegValue(RegValueNames.skinFolders, (GetRegValue(RegValueNames.skinFolders) == null ? "" : GetRegValue(RegValueNames.skinFolders) + ",") + skinFolderSelector.Text);
+                    skinFilterSelector.Items.Add(skinFilterSelector.Text);
+                    ChangeRegValue(RegValueNames.skinFilters, (GetRegValue(RegValueNames.skinFilters) == null ? "" : GetRegValue(RegValueNames.skinFilters) + ",") + skinFilterSelector.Text);
                 }
-                else if(skinFolderSelector.Text == ",")
+                else if(skinFilterSelector.Text == ",")
                 {
-                    skinFolderSelector.Text = "All";
+                    skinFilterSelector.Text = "All";
                     DebugLog("You cannot add \",\" as a prefix", true);
                 }
-                ev.Handled = true;
+                thisEvent.Handled = true;
             }
         };
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFolders)))
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFilters)))
         {
-            if(!skinFolderSelector.Items.Contains("All"))
-                skinFolderSelector.Items.Add("All");
-            
-            string[] foldersArr = GetRegValue(RegValueNames.skinFolders).Split(',');
+            if(!skinFilterSelector.Items.Contains("All"))
+                skinFilterSelector.Items.Add("All");
+
+            string[] foldersArr = GetRegValue(RegValueNames.skinFilters).Split(',');
 
             foreach(string name in foldersArr)
-                skinFolderSelector.Items.Add(name);
+                skinFilterSelector.Items.Add(name);
         }
         else
         {
-            skinFolderSelector.Items.Add("All");
-            skinFolderSelector.Text = "All";
+            skinFilterSelector.Items.Add("All");
+            skinFilterSelector.Text = "All";
         }
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.selectedSkinFolder)))
-            skinFolderSelector.Text = GetRegValue(RegValueNames.selectedSkinFolder);
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.selectedSkinFilter)))
+            skinFilterSelector.Text = GetRegValue(RegValueNames.selectedSkinFilter);
         else
-            skinFolderSelector.Text = "All";
-        
-        Controls.Add(skinFolderSelector);
+            skinFilterSelector.Text = "All";
+        Controls.Add(skinFilterSelector);
 
         showFilteredSkinsButton = new System.Windows.Forms.Button()
         {
@@ -253,7 +263,7 @@ public class Form1 : Form
         showFilteredSkinsButton.Click += new EventHandler(SearchOsuSkins);
         Controls.Add(showFilteredSkinsButton);
 
-        hideSelectedSkinFolderButton = new System.Windows.Forms.Button()
+        hideSelectedSkinFilterButton = new System.Windows.Forms.Button()
         {
             Top = 33,
             Font = mainFont,
@@ -261,10 +271,10 @@ public class Form1 : Form
             Left = 102,
             Text = "Hide",
         };
-        hideSelectedSkinFolderButton.Click += new EventHandler(SearchOsuSkins);
-        Controls.Add(hideSelectedSkinFolderButton);
+        hideSelectedSkinFilterButton.Click += new EventHandler(SearchOsuSkins);
+        Controls.Add(hideSelectedSkinFilterButton);
         
-        hiddenFoldersText = new CheckBox()
+        hiddenSkinFiltersText = new CheckBox()
         {
             Top = 33,
             Font = mainFont,
@@ -281,52 +291,52 @@ public class Form1 : Form
             Left = 156,
             Text = "Delete",
         };
-        hiddenFoldersText.TextChanged += new EventHandler((sender, ev) =>
+        hiddenSkinFiltersText.TextChanged += new EventHandler((sender, ev) =>
         {
-            int textWidth = TextRenderer.MeasureText(hiddenFoldersText.Text, mainFont).Width;
+            int textWidth = TextRenderer.MeasureText(hiddenSkinFiltersText.Text, mainFont).Width;
             if(textWidth == 0)
             {
-                if(Controls.Contains(hiddenFoldersText))
-                    Controls.Remove(hiddenFoldersText);
+                if(Controls.Contains(hiddenSkinFiltersText))
+                    Controls.Remove(hiddenSkinFiltersText);
                 deleteSkinSelectorButton.Left = 153;
             }
             else
             {
-                if(!Controls.Contains(hiddenFoldersText))
-                    Controls.Add(hiddenFoldersText);
+                if(!Controls.Contains(hiddenSkinFiltersText))
+                    Controls.Add(hiddenSkinFiltersText);
 
                 deleteSkinSelectorButton.Left = textWidth + 152;
-                hiddenFoldersText.Width =  textWidth + 30;
+                hiddenSkinFiltersText.Width =  textWidth + 30;
             }
         });
         Controls.Add(deleteSkinSelectorButton);
         
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
-            hiddenFoldersText.Text = hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)))
+            hiddenSkinFiltersText.Text = hiddenSkinFiltersText.Text = GetRegValue(RegValueNames.hiddenSkinFilter).Replace(",", ", ");
         else
-            hiddenFoldersText.Text = "";
+            hiddenSkinFiltersText.Text = "";
 
         deleteSkinSelectorButton.Click += new EventHandler((sender, e) =>
         {
-            if(skinFolderSelector.Items.Contains(skinFolderSelector.Text))
+            if(skinFilterSelector.Items.Contains(skinFilterSelector.Text))
             {
-                string[] origValue = GetRegValue(RegValueNames.skinFolders).Split(',');
+                string[] origValue = GetRegValue(RegValueNames.skinFilters).Split(',');
                 string fixedValue = "";
 
                 foreach(string name in origValue)
                 {
-                    if(skinFolderSelector.Text != name)
+                    if(skinFilterSelector.Text != name)
                         fixedValue += name + ",";
                 }
-                ChangeRegValue(RegValueNames.skinFolders, fixedValue.Remove(fixedValue.Length-1));
+                ChangeRegValue(RegValueNames.skinFilters, fixedValue.Remove(fixedValue.Length-1));
 
-                skinFolderSelector.Items.Remove(skinFolderSelector.Text);
+                skinFilterSelector.Items.Remove(skinFilterSelector.Text);
             }
-            else if(skinFolderSelector.Text == "All")
+            else if(skinFilterSelector.Text == "All")
                 DebugLog("You can't delete the \"All\" prefix silly.", true);
 
-            skinFolderSelector.Text = "All";
-            ChangeRegValue(RegValueNames.selectedSkinFolder, "All");
+            skinFilterSelector.Text = "All";
+            ChangeRegValue(RegValueNames.selectedSkinFilter, "All");
         });
 
         writeCurrSkinBox = new CheckBox()
@@ -375,33 +385,25 @@ public class Form1 : Form
             toolTip.SetToolTip(deleteSkinButton, "Moves selected skin to \"Deleted Skins\" folder");
             toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
             toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible\nChecked means that they are shown.");
-            toolTip.SetToolTip(skinFolderSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
+            toolTip.SetToolTip(skinFilterSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
             toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
             toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
             toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix.\nResets hidden folders.");
-            toolTip.SetToolTip(hideSelectedSkinFolderButton, "Hides skins with selected prefix.\nPress show button to reset them.");
+            toolTip.SetToolTip(hideSelectedSkinFilterButton, "Hides skins with selected prefix.\nPress show button to reset them.");
             toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
             toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
-            toolTip.SetToolTip(hiddenFoldersText, "The skins with these prefixes are hidden from the list");
+            toolTip.SetToolTip(hiddenSkinFiltersText, "The skins with these prefixes are hidden from the list");
             toolTip.SetToolTip(expandingCursorBox, "Checked means the cursor will expand on click");
             //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
         }
 
-        openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
-        {
-            InitialDirectory =  osuPath,
-            Filter = "Directory|*.directory",
-            FileName =  "",
-            Title = "Select osu! directory"
-        };
-        
-        DirectoryInfo osuPathDI = new DirectoryInfo(osuPath + "\\skins");
+        DirectoryInfo osuPathDI = new DirectoryInfo(Path.Combine(osuPath, "skins"));
         if(osuPathDI.Exists)
         {
-            if(!Directory.Exists(mainSkinPath))
+            if(!Directory.Exists(helperSkinPath))
                 osuPathDI.CreateSubdirectory("!!!osu!helper Skin");
             
-            if(!Directory.Exists(mainSkinPath.Replace("!!!osu!helper Skin", "Deleted Skins")))
+            if(!Directory.Exists(Path.Combine(osuPath, "skins", "Deleted Skins")))
                 osuPathDI.CreateSubdirectory("Deleted Skins");
 
             try
@@ -418,101 +420,102 @@ public class Form1 : Form
 
     private void SetupSkinChangeCheckBoxes()
     {
-        CheckBox current;
-        int num;
-        CheckState defaultCheckedState;
+        CheckBox workingCheckBox;
+        int indexInControls;
+        CheckState defaultCheckedState = CheckState.Indeterminate;
 
         for (int i = 0; i <= 6; i++)
         {
-            if(i == 7)
+            if(i == 7) //skipping instafade for now
                 continue;
-            defaultCheckedState =  CheckState.Unchecked;
-            current = new CheckBox();
-            current.Height = 25;
-            current.Width = 297;
-            current.Font = mainFont;
-            current.Left = 503;
-            current.Top = 60 + (i*20);
-            current.TextAlign = ContentAlignment.MiddleLeft;
-            current.CheckStateChanged += new EventHandler(ChangeRegValue_Click);
-            current.ThreeState = true;
-            Controls.Add(current);
-            num = Controls.IndexOf(current);
+
+            defaultCheckedState =  CheckState.Indeterminate;
+            workingCheckBox = new CheckBox();
+            workingCheckBox.Height = 25;
+            workingCheckBox.Width = 297;
+            workingCheckBox.Font = mainFont;
+            workingCheckBox.Left = 503;
+            workingCheckBox.Top = 60 + (i*20);
+            workingCheckBox.TextAlign = ContentAlignment.MiddleLeft;
+            workingCheckBox.CheckStateChanged += new EventHandler(ChangeRegValue_Click);
+            workingCheckBox.ThreeState = true;
+            Controls.Add(workingCheckBox);
+            indexInControls = Controls.IndexOf(workingCheckBox);
 
             switch (i)
             {
                 case 0:
-                    Controls[num].Name = RegValueNames.showComboBurstsBox.ToString(); 
-                    Controls[num].Text = "Combo Bursts";
-                    showComboBurstsBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.showComboBurstsBox.ToString(); 
+                    Controls[indexInControls].Text = "Combo Bursts";
+                    showComboBurstsBox = (CheckBox)Controls[indexInControls];
                     break;
                 case 1:
-                    Controls[num].Name = RegValueNames.showHitlightingBox.ToString(); 
-                    Controls[num].Text = "Hit Lighting";
-                    showHitlightingBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.showHitLightingBox.ToString(); 
+                    Controls[indexInControls].Text = "Hit Lighting";
+                    showHitLightingBox = (CheckBox)Controls[indexInControls];
                     break;
                 case 2:
-                    Controls[num].Name = RegValueNames.showSkinNumbersBox.ToString();
-                    Controls[num].Text = "Hitcircle Numbers";
-                    showSkinNumbersBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.showSkinNumbersBox.ToString();
+                    Controls[indexInControls].Text = "Hitcircle Numbers";
+                    showSkinNumbersBox = (CheckBox)Controls[indexInControls];
                     defaultCheckedState = CheckState.Checked;
                     break;
                 case 3:
-                    Controls[num].Name = RegValueNames.disableCursorTrailBox.ToString();
-                    Controls[num].Text = "Cursor Trail";
-                    disableCursorTrailBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.disableCursorTrailBox.ToString();
+                    Controls[indexInControls].Text = "Cursor Trail";
+                    disableCursorTrailBox = (CheckBox)Controls[indexInControls];
                     defaultCheckedState = CheckState.Checked;
                     break;
                 case 4:
-                    Controls[num].Name = RegValueNames.showSliderEndsBox.ToString();
-                    Controls[num].Text = "Slider Ends";
-                    showSliderEndsBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.showSliderEndsBox.ToString();
+                    Controls[indexInControls].Text = "Slider Ends";
+                    showSliderEndsBox = (CheckBox)Controls[indexInControls];
                     break;
                 case 5:
-                    Controls[num].Name = RegValueNames.showHitCircles.ToString();
-                    Controls[num].Text = "Show Hitcircles";
-                    showHitCirclesBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.showHitCircles.ToString();
+                    Controls[indexInControls].Text = "Show Hitcircles";
+                    showHitCirclesBox = (CheckBox)Controls[indexInControls];
                     defaultCheckedState = CheckState.Checked;
                     break;
                 case 6:
-                    Controls[num].Name = RegValueNames.expandingCursor.ToString();
-                    Controls[num].Text = "Expanding Cursor";
-                    expandingCursorBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.expandingCursor.ToString();
+                    Controls[indexInControls].Text = "Expanding Cursor";
+                    expandingCursorBox = (CheckBox)Controls[indexInControls];
                     defaultCheckedState = CheckState.Checked;
                     break;
                 case 7:
-                    Controls[num].Name = RegValueNames.makeInstafadeBox.ToString();
-                    Controls[num].Text = "Make Instafade";
-                    makeInstafadeBox = (CheckBox)Controls[num];
+                    Controls[indexInControls].Name = RegValueNames.makeInstafadeBox.ToString();
+                    Controls[indexInControls].Text = "Make Instafade";
+                    makeInstafadeBox = (CheckBox)Controls[indexInControls];
                     defaultCheckedState = CheckState.Indeterminate;
                     break;
                 default:
-                    DebugLog("Error bulding CheckBoxes. i = " + i.ToString(), true);
+                    DebugLog("Error building CheckBoxes. i = " + i.ToString(), true);
                     return;
             }
-            string regValue = GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[num].Name, true));
+            string regValue = GetRegValue((RegValueNames)Enum.Parse(typeof(RegValueNames), Controls[indexInControls].Name, true));
             switch(regValue)
             {
                 case "True":
-                    ((CheckBox)Controls[num]).Checked = true;
+                    ((CheckBox)Controls[indexInControls]).Checked = true;
                     break;
                 case "False":
-                    ((CheckBox)Controls[num]).Checked = false;
+                    ((CheckBox)Controls[indexInControls]).Checked = false;
                     break;
                 case "Indeterminate":
-                    ((CheckBox)Controls[num]).CheckState = CheckState.Indeterminate;
+                    ((CheckBox)Controls[indexInControls]).CheckState = CheckState.Indeterminate;
                     break;
                 case "Checked":
-                    ((CheckBox)Controls[num]).CheckState = CheckState.Checked;
+                    ((CheckBox)Controls[indexInControls]).CheckState = CheckState.Checked;
                     break;
                 case "Unchecked":
-                    ((CheckBox)Controls[num]).CheckState = CheckState.Unchecked;
+                    ((CheckBox)Controls[indexInControls]).CheckState = CheckState.Unchecked;
                     break;
                 default:
-                    ((CheckBox)Controls[num]).CheckState = defaultCheckedState;
+                    ((CheckBox)Controls[indexInControls]).CheckState = defaultCheckedState;
                     break;
             }
-            DebugLog($"CheckBox Name is: {Controls[num].Name} | Text is: {Controls[num].Text} | Checked: {((CheckBox)Controls[num]).Checked.ToString()}", false);
+            DebugLog($"CheckBox Name is: {Controls[indexInControls].Name} | Text is: {Controls[indexInControls].Text} | Checked: {((CheckBox)Controls[indexInControls]).Checked.ToString()}", false);
         }
     }
 
@@ -537,10 +540,9 @@ public class Form1 : Form
                 ChangeOsuPathButton_Click(sender, e);
                 return;
             }
-            osuPathBox.Text = directorySelector.SelectedPath;
-            osuPathBox.Text = directorySelector.SelectedPath;
+            osuFolderPathBox.Text = directorySelector.SelectedPath;
             osuPath = directorySelector.SelectedPath;
-            DebugLog("osuPath set to: "+osuPath,false);
+            DebugLog("osuPath set to: " + osuPath,false);
             ChangeRegValue_Click(sender, e);
         }
         directorySelector.Dispose();
@@ -548,39 +550,40 @@ public class Form1 : Form
 
     private void SearchOsuSkins(object sender, EventArgs e)
     {
+        EnableAllControls(false);
         List<string> hiddenSkinFoldersList = new List<string>();
 
-        if(sender == hideSelectedSkinFolderButton)
+        if(sender == hideSelectedSkinFilterButton)
         {
-            DebugLog("hideSelectedSkinFolderButton called SearchOsuSkins()", false);
+            DebugLog("hideSelectedSkinFilterButton called SearchOsuSkins()", false);
             //Adds selected prefix to hidden list
-            if(skinFolderSelector.Text != "All" && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)) &&
-                        !GetRegValue(RegValueNames.hiddenSkinFolders).Contains(skinFolderSelector.Text))
+            if(skinFilterSelector.Text != "All" && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)) &&
+                    !GetRegValue(RegValueNames.hiddenSkinFilter).Contains(skinFilterSelector.Text))
             {
-                ChangeRegValue(RegValueNames.hiddenSkinFolders, GetRegValue(RegValueNames.hiddenSkinFolders) + "," + skinFolderSelector.Text);
-                hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+                ChangeRegValue(RegValueNames.hiddenSkinFilter, GetRegValue(RegValueNames.hiddenSkinFilter) + "," + skinFilterSelector.Text);
+                hiddenSkinFiltersText.Text = GetRegValue(RegValueNames.hiddenSkinFilter).Replace(",", ", ");
             }
-            else if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
+            else if(String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)))
             {
-                ChangeRegValue(RegValueNames.hiddenSkinFolders, skinFolderSelector.Text);
-                hiddenFoldersText.Text = GetRegValue(RegValueNames.hiddenSkinFolders).Replace(",", ", ");
+                ChangeRegValue(RegValueNames.hiddenSkinFilter, skinFilterSelector.Text);
+                hiddenSkinFiltersText.Text = GetRegValue(RegValueNames.hiddenSkinFilter).Replace(",", ", ");
             }
-            skinFolderSelector.Text = "All";
+            skinFilterSelector.Text = "All";
         }
         else if(sender == showFilteredSkinsButton)
         {
             DebugLog("showFilteredSkinsButton called SearchOsuSkins()", false);
-            hiddenFoldersText.Text = "";
-            ChangeRegValue(RegValueNames.hiddenSkinFolders, "");
-            if(skinFolderSelector.Text == ",")
+            hiddenSkinFiltersText.Text = "";
+            ChangeRegValue(RegValueNames.hiddenSkinFilter, "");
+            if(skinFilterSelector.Text == ",")
             {
-                skinFolderSelector.Text = "All";
+                skinFilterSelector.Text = "All";
                 DebugLog("You cannot use \",\" as a prefix", true);
             }
         }
 
-        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFolders)))
-            hiddenSkinFoldersList = GetRegValue(RegValueNames.hiddenSkinFolders).Split(',').ToList();
+        if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)))
+            hiddenSkinFoldersList = GetRegValue(RegValueNames.hiddenSkinFilter).Split(',').ToList();
         else
             hiddenSkinFoldersList.Add(osuPath);
         
@@ -588,8 +591,8 @@ public class Form1 : Form
         osuSkinsListBox.BeginUpdate();
         osuSkinsListBox.Items.Clear();
         osuSkinsPathList.Clear();
-        DirectoryInfo di = new DirectoryInfo(Path.Combine(osuPath, "skins"));
-        var osuSkins = di.GetDirectories();
+        DirectoryInfo skinFoldersDI = new DirectoryInfo(Path.Combine(osuPath, "skins"));
+        DirectoryInfo[] osuSkins = skinFoldersDI.GetDirectories();
 
         foreach(DirectoryInfo skin in osuSkins)
         {
@@ -599,9 +602,9 @@ public class Form1 : Form
             {
                 if(!hiddenSkinFoldersList.Contains(skinName.ElementAt<char>(0).ToString())) //true if skin does not have prefix that is supposed to be hidden
                 {
-                    if(skinFolderSelector.Text != "All")
+                    if(skinFilterSelector.Text != "All")
                     {
-                        if(skinName.IndexOf(skinFolderSelector.Text) == 0) //true if skin has prefix that is only supposed to be shown
+                        if(skinName.IndexOf(skinFilterSelector.Text) == 0) //true if skin has prefix that is only supposed to be shown
                         {
                             osuSkinsPathList.Add(skin.FullName);
                             osuSkinsListBox.Items.Add(skinName);
@@ -609,7 +612,7 @@ public class Form1 : Form
                                 DebugLog($"Adding {skinName} to the skin list | {skin.FullName}", false);
                         }
                     }
-                    else
+                    else //add all skins
                     {
                         osuSkinsPathList.Add(skin.FullName);
                         osuSkinsListBox.Items.Add(skinName);
@@ -634,17 +637,19 @@ public class Form1 : Form
 
         if(sender == showFilteredSkinsButton)
         {
-            if(!skinFolderSelector.Items.Contains(skinFolderSelector.Text))
-                skinFolderSelector.Items.Add(skinFolderSelector.Text);
+            if(!skinFilterSelector.Items.Contains(skinFilterSelector.Text))
+                skinFilterSelector.Items.Add(skinFilterSelector.Text);
 
             ChangeRegValue_Click(sender, e);
         }
         
-        if(!osuSkinsListBox.Items.Contains(skinFolderSelector.Text) && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName))) //if that was last selected is not shown,
+        if(!osuSkinsListBox.Items.Contains(skinFilterSelector.Text) && !String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinName))) //if that was last selected is not shown,
             ChangeRegValue(RegValueNames.skinName, "");
+
+        EnableAllControls(true);
     }
 
-    private void OpenSkinFolder(object sender, EventArgs e)
+    private void OpenSkinFolder_Click(object sender, EventArgs e)
     {
         if(osuSkinsListBox.SelectedItem == null)
         {
@@ -655,7 +660,7 @@ public class Form1 : Form
         Process.Start("explorer.exe", Path.Combine(osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()));
     }
 
-    private void DeleteSelectedSkin(object sender, EventArgs e)
+    private void DeleteSelectedSkin_Click(object sender, EventArgs e)
     {
         EnableAllControls(false);
         if(osuSkinsListBox.SelectedItem == null)
@@ -663,10 +668,9 @@ public class Form1 : Form
             DebugLog("Find skins first. Error occurred when trying to delete skin", true);
             return;
         }
-        string skinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
-        Directory.Move(skinPath, Path.Combine(osuPath,  "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
-        
-        DebugLog($"Moving {skinPath} to {Path.Combine(osuPath,  "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString())}", false);
+        string currentSkinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
+        Directory.Move(currentSkinPath, Path.Combine(osuPath,  "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
+        DebugLog($"Moving {currentSkinPath} to {Path.Combine(osuPath,  "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString())}", false);
         osuSkinsPathList.RemoveAt(osuSkinsListBox.SelectedIndex);
         osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
         EnableAllControls(true);
@@ -683,15 +687,15 @@ public class Form1 : Form
         }
         EnableAllControls(false);
 
-        DeleteSkinElementsInMainSkin();
-        string skinPath;
+        DeleteSkinElementsInHelperSkin();
+        string workingSkinPath;
         if(osuSkinsListBox.SelectedItems.Count == 1) //false if multiple skins are selected
-            skinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
+            workingSkinPath = osuSkinsPathList[osuSkinsListBox.SelectedIndex];
         else
         {
-            Random random = new Random();
-            int randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[random.Next(0, osuSkinsListBox.SelectedItems.Count)]);
-            skinPath = osuSkinsPathList[randomSkinIndex];
+            Random r = new Random();
+            int randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[r.Next(0, osuSkinsListBox.SelectedItems.Count)]);
+            workingSkinPath = osuSkinsPathList[randomSkinIndex];
 
             osuSkinsListBox.ClearSelected();
             osuSkinsListBox.SetSelected(randomSkinIndex, true);
@@ -700,17 +704,17 @@ public class Form1 : Form
         ChangeRegValue(RegValueNames.skinName, osuSkinsListBox.SelectedItem.ToString());
 
         if(writeCurrSkinBox.Checked)
-            UpdateSkinTextFile(skinPath.Replace(Path.Combine(osuPath, "skins") + "\\", ""));
+            UpdateSkinTextFile(workingSkinPath.Replace(Path.Combine(osuPath, "skins") + "\\", ""));
 
-        DirectoryInfo di = new DirectoryInfo(skinPath);
+        DirectoryInfo workingSkinPathDi = new DirectoryInfo(workingSkinPath);
         
-        foreach(FileInfo file in di.GetFiles())
+        foreach(FileInfo currentFile in workingSkinPathDi.GetFiles())
         {
-            file.CopyTo(Path.Combine(mainSkinPath, file.Name), true);
+            currentFile.CopyTo(Path.Combine(helperSkinPath, currentFile.Name), true);
             if(spamLogs)
-                DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(mainSkinPath, file.Name)}\"", false);
+                DebugLog($"Copying \"{currentFile.FullName}\" to \"{Path.Combine(helperSkinPath, currentFile.Name)}\"", false);
         }
-        RecursiveSkinFolderMove(skinPath, "\\");
+        RecursiveSkinFolderMove(workingSkinPath, "\\");
 
         DebugLog("[FINISHED CHANGING TO SKIN]", false);
         
@@ -720,8 +724,8 @@ public class Form1 : Form
             ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
             ShowSliderEnds(showSliderEndsBox.CheckState);
             DisableCursorTrail(disableCursorTrailBox.CheckState);
-            ShowCombobursts(showComboBurstsBox.CheckState);
-            ShowHitLighting(showHitlightingBox.CheckState);
+            ShowComboBursts(showComboBurstsBox.CheckState);
+            ShowHitLighting(showHitLightingBox.CheckState);
             ShowHitCircles(showHitCirclesBox.CheckState);
             //MakeInstafade(makeInstafadeBox.CheckState);
             DebugLog("[FINISHED EDITING SKIN]", false);
@@ -735,7 +739,7 @@ public class Form1 : Form
 
         foreach(DirectoryInfo folder in rootFolder.GetDirectories())
         {
-            Directory.CreateDirectory(mainSkinPath + prevFolder +"\\" + folder.Name);
+            Directory.CreateDirectory(helperSkinPath + prevFolder +"\\" + folder.Name);
             DirectoryInfo subFolder = new DirectoryInfo(skinPath + prevFolder + "\\" + folder.Name);
 
             if(subFolder.GetDirectories().Length != 0)
@@ -745,9 +749,9 @@ public class Form1 : Form
 
             foreach(FileInfo file in subFolder.GetFiles())
             {
-                file.CopyTo(mainSkinPath + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
+                file.CopyTo(helperSkinPath + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
                 if(spamLogs)
-                    DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(mainSkinPath + prevFolder, folder.Name, file.Name)}\"", false);
+                    DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(helperSkinPath + prevFolder, folder.Name, file.Name)}\"", false);
             }  
         }
     }
@@ -755,9 +759,9 @@ public class Form1 : Form
     private void RandomSkin_Click(object sender, EventArgs e)
     {
         EnableAllControls(false);
-        var randomNumber = new Random();
+        Random r = new Random();
         osuSkinsListBox.ClearSelected();
-        osuSkinsListBox.SetSelected(randomNumber.Next(0, osuSkinsListBox.Items.Count), true);
+        osuSkinsListBox.SetSelected(r.Next(0, osuSkinsListBox.Items.Count), true);
         DebugLog($"Changed to random skin. Picked \"{osuSkinsListBox.SelectedItem.ToString()}\"", false);
         ChangeToSelectedSkin(sender, e);
     }
@@ -783,21 +787,21 @@ public class Form1 : Form
         {
             bool hitCircleOverlayAboveNumber = true;
             bool At2X;
-            string searchINIForBool = SeachSkinINI("HitCircleOverlayAbove");
+            string searchINIForBool = SearchSkinINI("HitCircleOverlayAbove");
             if(searchINIForBool != null && searchINIForBool.Contains('0'))
                 hitCircleOverlayAboveNumber = false;
 
-            string hitcircleDefault = SeachSkinINI("HitCirclePrefix:").Replace("HitCirclePrefix:", "").Replace(" ", "").Replace("/", "\\");
+            string hitcircleDefault = SearchSkinINI("HitCirclePrefix:").Replace("HitCirclePrefix:", "").Replace(" ", "").Replace("/", "\\");
             if(String.IsNullOrWhiteSpace(hitcircleDefault))
                 hitcircleDefault = "default";
 
-            if((File.Exists(Path.Combine(mainSkinPath, "hitcircle@2x.png")) || File.Exists(Path.Combine(mainSkinPath, "hitcircleoverlay@2x.png"))) &&
-            File.Exists(Path.Combine(mainSkinPath, hitcircleDefault + "-1@2x.png")))
+            if((File.Exists(Path.Combine(helperSkinPath, "hitcircle@2x.png")) || File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png"))) &&
+            File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-1@2x.png")))
             {
                 At2X = true;
             }
-            else if((File.Exists(Path.Combine(mainSkinPath, "hitcircle.png")) || File.Exists(Path.Combine(mainSkinPath, "hitcircleoverlay.png"))) &&
-            File.Exists(Path.Combine(mainSkinPath, hitcircleDefault + "-1.png")))
+            else if((File.Exists(Path.Combine(helperSkinPath, "hitcircle.png")) || File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay.png"))) &&
+            File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-1.png")))
             {
                 At2X = false;
             }
@@ -808,8 +812,8 @@ public class Form1 : Form
             }
 
 
-            Image hitcircleImage = (File.Exists(Path.Combine(mainSkinPath, "hitcircle@2x.png")) ? Image.FromFile(Path.Combine(mainSkinPath, "hitcircle@2x.png")) : new Bitmap(1,1));
-            Image hitcircleOverlayImage = (File.Exists(Path.Combine(mainSkinPath, "hitcircleoverlay@2x.png")) ? Image.FromFile(Path.Combine(mainSkinPath, "hitcircleoverlay@2x.png")) : new Bitmap(1,1));
+            Image hitcircleImage = (File.Exists(Path.Combine(helperSkinPath, "hitcircle@2x.png")) ? Image.FromFile(Path.Combine(helperSkinPath, "hitcircle@2x.png")) : new Bitmap(1,1));
+            Image hitcircleOverlayImage = (File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png")) ? Image.FromFile(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png")) : new Bitmap(1,1));
             Graphics hitcircleGraphics =  Graphics.FromImage(hitcircleImage);
             int imageWidth = hitcircleImage.Width/2;
             int imageHeight = hitcircleImage.Height/2;
@@ -826,9 +830,9 @@ public class Form1 : Form
             for (int i = 0; i <= 9; i++)
             {
                 DebugLog(i, true);
-                Image textImage = (File.Exists(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+"@2x.png")) ?
-                    Image.FromFile(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+"@2x.png")) :
-                    Image.FromFile(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+".png")));
+                Image textImage = (File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-"+i+"@2x.png")) ?
+                    Image.FromFile(Path.Combine(helperSkinPath, hitcircleDefault + "-"+i+"@2x.png")) :
+                    Image.FromFile(Path.Combine(helperSkinPath, hitcircleDefault + "-"+i+".png")));
 
                 x = imageWidth - (textImage.Width/2);
                 y = imageHeight - (textImage.Height/2);
@@ -845,7 +849,7 @@ public class Form1 : Form
                     textImage.Dispose();
                     tempGraphic.Dispose();
                     //File.Delete(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+(At2X? "@2x": "@2x")+".png"));
-                    string path = Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+(At2X? "@2x": "")+".png");
+                    string path = Path.Combine(helperSkinPath, hitcircleDefault + "-"+i+(At2X? "@2x": "")+".png");
                     hitcircleImageTemp.Save(path.Replace(".png", ".temp"));
                     //Process.Start("cmd.exe", $"/c ffmpeg -i {path.Replace(".png", ".temp")} -vf scale=320:320 -y {path}");
                     //File.Delete(path.Replace(".png", ".temp"));
@@ -869,7 +873,7 @@ public class Form1 : Form
         bool show = (showState == CheckState.Checked);
 
         EnableAllControls(false);
-        List<string> names = new List<string>()
+        List<string> fileNames = new List<string>()
         {
             "hitcircle.png",
             "hitcircle@2x.png",
@@ -882,25 +886,25 @@ public class Form1 : Form
         };
         if(show)
         {
-            foreach(string name in names)
-                if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
+            foreach(string curName in fileNames)
+            {
+                if(File.Exists(Path.Combine(GetCurrentSkinPath(), curName)))
                 {
-                    File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+                    File.Copy(Path.Combine(GetCurrentSkinPath(), curName), Path.Combine(helperSkinPath, curName), true);
                     if(spamLogs)
-                        DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), name)} to {Path.Combine(mainSkinPath, name)}", false);
+                        DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), curName)} to {Path.Combine(helperSkinPath, curName)}", false);
                 }
-                    
+            }
         }
         else
         {
             Bitmap emptyImage = new Bitmap(1,1);
-            foreach(string name in names)
+            foreach(string curName in fileNames)
             {
-                emptyImage.Save(Path.Combine(mainSkinPath, name));
+                emptyImage.Save(Path.Combine(helperSkinPath, curName));
                 if(spamLogs)
-                    DebugLog($"Copying empty image to {Path.Combine(mainSkinPath, name)}", false);
+                    DebugLog($"Copying empty image to {Path.Combine(helperSkinPath, curName)}", false);
             }
-                
             
             emptyImage.Dispose();
         }
@@ -925,30 +929,30 @@ public class Form1 : Form
 
         if(show)
         {
-            foreach(string name in fileNames)
+            foreach(string curName in fileNames)
             {
-                if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
+                if(File.Exists(Path.Combine(GetCurrentSkinPath(), curName)))
                 {
-                    Image thisImg = Image.FromFile(Path.Combine(GetCurrentSkinPath(), name));
+                    Image thisImg = Image.FromFile(Path.Combine(GetCurrentSkinPath(), curName));
                     if(thisImg.Height > 100)
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), curName), Path.Combine(helperSkinPath, curName), true);
                         thisImg.Dispose();
                         if(spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), name)} to {Path.Combine(mainSkinPath, name)}", false);
+                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), curName)} to {Path.Combine(helperSkinPath, curName)}", false);
                         
                         continue;
                     }
                     thisImg.Dispose();
-                    File.Delete(Path.Combine(mainSkinPath, name));
+                    File.Delete(Path.Combine(helperSkinPath, curName));
                     if(spamLogs)
-                        DebugLog($"Deleting {Path.Combine(mainSkinPath, name)}", false);
+                        DebugLog($"Deleting {Path.Combine(helperSkinPath, curName)}", false);
                 }
-                else if(File.Exists(Path.Combine(mainSkinPath, name)))
+                else if(File.Exists(Path.Combine(helperSkinPath, curName)))
                 {
-                    File.Delete(Path.Combine(mainSkinPath, name));
+                    File.Delete(Path.Combine(helperSkinPath, curName));
                     if(spamLogs)
-                        DebugLog($"Deleting {Path.Combine(mainSkinPath, name)}", false);
+                        DebugLog($"Deleting {Path.Combine(helperSkinPath, curName)}", false);
                 }
             }
         }
@@ -957,18 +961,18 @@ public class Form1 : Form
             Image emptyImage = new Bitmap(1,1);
             foreach(string name in fileNames)
             {
-                emptyImage.Save(Path.Combine(mainSkinPath, name));
+                emptyImage.Save(Path.Combine(helperSkinPath, name));
                 if(spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(mainSkinPath, name)}", false);
+                    DebugLog($"Saving empty image to {Path.Combine(helperSkinPath, name)}", false);
             }
             emptyImage.Dispose();
         }
         EnableAllControls(true);
     }
 
-    private void ShowCombobursts(CheckState showState)
+    private void ShowComboBursts(CheckState showState)
     {
-        DebugLog($"ShowCombobursts({showState}) called", false);
+        DebugLog($"ShowComboBursts({showState}) called", false);
 
         if(showState == CheckState.Indeterminate)
             return;
@@ -989,11 +993,11 @@ public class Form1 : Form
 
         foreach(string name in fileNames)
         {
-            if(!File.Exists(Path.Combine(mainSkinPath, name + ".png")))
+            if(!File.Exists(Path.Combine(helperSkinPath, name + ".png")))
             {
-                emptyImage.Save(Path.Combine(mainSkinPath, name + ".png"));
+                emptyImage.Save(Path.Combine(helperSkinPath, name + ".png"));
                 if(spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(mainSkinPath, name + ".png")}", false);
+                    DebugLog($"Saving empty image to {Path.Combine(helperSkinPath, name + ".png")}", false);
             }
         }
 
@@ -1005,12 +1009,12 @@ public class Form1 : Form
                 if(file.Name.Contains(name))
                 {
                     if(show)
-                        File.Copy(file.FullName, Path.Combine(mainSkinPath, file.Name), true);
+                        File.Copy(file.FullName, Path.Combine(helperSkinPath, file.Name), true);
                     else
-                        emptyImage.Save(Path.Combine(mainSkinPath, file.Name));
+                        emptyImage.Save(Path.Combine(helperSkinPath, file.Name));
                     
                     if(spamLogs)
-                        DebugLog($"Saving empty image to {Path.Combine(mainSkinPath, file.Name)}", false);
+                        DebugLog($"Saving empty image to {Path.Combine(helperSkinPath, file.Name)}", false);
                 }
         }
         emptyImage.Dispose();
@@ -1038,9 +1042,9 @@ public class Form1 : Form
             foreach(string name in names)
                 if(File.Exists(Path.Combine(GetCurrentSkinPath(), name)))
                 {
-                    File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(mainSkinPath, name), true);
+                    File.Copy(Path.Combine(GetCurrentSkinPath(), name), Path.Combine(helperSkinPath, name), true);
                     if(spamLogs)
-                        DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), name)} to {Path.Combine(mainSkinPath, name)}", false);
+                        DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), name)} to {Path.Combine(helperSkinPath, name)}", false);
                 }
                     
         }
@@ -1049,9 +1053,9 @@ public class Form1 : Form
             Bitmap emptyImage = new Bitmap(1, 1);
             foreach(string name in names)
             {
-                emptyImage.Save(Path.Combine(mainSkinPath, name));
+                emptyImage.Save(Path.Combine(helperSkinPath, name));
                 if(spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(mainSkinPath, name)}", false);
+                    DebugLog($"Saving empty image to {Path.Combine(helperSkinPath, name)}", false);
             }
             emptyImage.Dispose();
         }
@@ -1094,15 +1098,15 @@ public class Form1 : Form
                 {
                     if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName)) && (image == null ? true : image.Size.Height < 100))
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(mainSkinPath, fileName), true);
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName), Path.Combine(helperSkinPath, fileName), true);
                         if(spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName)} to {Path.Combine(mainSkinPath, fileName)}", false);
+                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName)} to {Path.Combine(helperSkinPath, fileName)}", false);
                     }
                     else if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("end", "start"))))
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(mainSkinPath, fileName), true);
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(helperSkinPath, fileName), true);
                         if(spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle"))} to {Path.Combine(mainSkinPath, fileName)}", false);
+                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderendcircle", "sliderstartcircle"))} to {Path.Combine(helperSkinPath, fileName)}", false);
                         if(!File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace(".png", "@2x.png"))))
                         {
                             skipAt2X = fileName.Replace(".png", "@2x.png");
@@ -1110,9 +1114,9 @@ public class Form1 : Form
                     }
                     else if(File.Exists(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit"))))
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit")), Path.Combine(mainSkinPath, fileName), true);
+                        File.Copy(Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit")), Path.Combine(helperSkinPath, fileName), true);
                         if(spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit"))} to {Path.Combine(mainSkinPath, fileName)}", false);
+                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), fileName.Replace("sliderend", "hit"))} to {Path.Combine(helperSkinPath, fileName)}", false);
                     }
                     /* else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
                     {
@@ -1130,16 +1134,16 @@ public class Form1 : Form
         else//hiding ends
         {
             foreach(string fileName in sliderEnds)
-                emptyImage.Save(Path.Combine(mainSkinPath, fileName));
+                emptyImage.Save(Path.Combine(helperSkinPath, fileName));
         }
         emptyImage.Dispose();
         sliderImage.Dispose();
         EnableAllControls(true);
     }
     
-    private void DeleteSkinElementsInMainSkin()
+    private void DeleteSkinElementsInHelperSkin()
     {
-        DirectoryInfo rootFolder = new DirectoryInfo(mainSkinPath);
+        DirectoryInfo rootFolder = new DirectoryInfo(helperSkinPath);
         
         foreach(FileInfo file in rootFolder.GetFiles())
         {
@@ -1169,8 +1173,8 @@ public class Form1 : Form
         EnableAllControls(false);
         if(show) //show skin numbers
         {
-            File.Copy(Path.Combine(GetCurrentSkinPath(), "skin.ini"), Path.Combine(mainSkinPath, "skin.ini"), true);
-            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), "skin.ini")} to {Path.Combine(mainSkinPath, "skin.ini")}", false);
+            File.Copy(Path.Combine(GetCurrentSkinPath(), "skin.ini"), Path.Combine(helperSkinPath, "skin.ini"), true);
+            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), "skin.ini")} to {Path.Combine(helperSkinPath, "skin.ini")}", false);
         }
         else //hide skin numbers
             EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
@@ -1180,7 +1184,7 @@ public class Form1 : Form
     private void EditSkinIni(string searchFor, string replaceWith, string fallBackSearch)
     {
         DebugLog($"Attempting to search for {searchFor}, replace it with {replaceWith}, with a fallback of {fallBackSearch}. In the skin.ini", false);
-        string skinINIPath = Path.Combine(mainSkinPath, "skin.ini");
+        string skinINIPath = Path.Combine(helperSkinPath, "skin.ini");
         File.Copy(skinINIPath, skinINIPath.Replace("skin.ini", "skin.ini.temp"));
         StreamReader reader = new StreamReader(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
         StreamWriter writer = new StreamWriter(skinINIPath);
@@ -1243,7 +1247,7 @@ public class Form1 : Form
             valName = RegValueNames.writeCurrSkinToTXT;
             val = writeCurrSkinBox.Checked.ToString();
         }
-        else if(sender == changeOsuPathButton || sender == osuPathBox)
+        else if(sender == changeOsuPathButton || sender == osuFolderPathBox)
         {
             valName = RegValueNames.osuPath;
             val = osuPath;
@@ -1278,20 +1282,20 @@ public class Form1 : Form
         }
         else if(sender == showFilteredSkinsButton)
         {
-            valName = RegValueNames.selectedSkinFolder;
-            val = skinFolderSelector.Text;
+            valName = RegValueNames.selectedSkinFilter;
+            val = skinFilterSelector.Text;
         }
         else if(sender == showComboBurstsBox)
         {
             valName = RegValueNames.showComboBurstsBox;
             val = showComboBurstsBox.CheckState.ToString();
-            ShowCombobursts(showComboBurstsBox.CheckState);
+            ShowComboBursts(showComboBurstsBox.CheckState);
         }
-        else if(sender == showHitlightingBox)
+        else if(sender == showHitLightingBox)
         {
-            valName = RegValueNames.showHitlightingBox;
-            val = showHitlightingBox.CheckState.ToString();
-            ShowHitLighting(showHitlightingBox.CheckState);
+            valName = RegValueNames.showHitLightingBox;
+            val = showHitLightingBox.CheckState.ToString();
+            ShowHitLighting(showHitLightingBox.CheckState);
         }
         else if(sender == showHitCirclesBox)
         {
@@ -1323,7 +1327,7 @@ public class Form1 : Form
     private void ChangeRegValue(RegValueNames valueName, string value)
     {
         DebugLog($"Changed Reg value of {valueName.ToString()} to \"{value}\"", false);
-        Registry.SetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valueName.ToString(), value);
+        Registry.SetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", ((int)valueName).ToString(), value);
     }
     
     private string GetRegValue(RegValueNames valName)
@@ -1331,7 +1335,7 @@ public class Form1 : Form
         try
         {
             DebugLog($"Reg value of {valName.ToString()} is \"{Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valName.ToString(), null).ToString()}\"", false);
-            return Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valName.ToString(), null).ToString();
+            return Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", ((int)valName).ToString(), null).ToString();
         }
         catch
         {
@@ -1340,10 +1344,10 @@ public class Form1 : Form
     }
 
 //MISC
-    private string SeachSkinINI(string searchFor)
+    private string SearchSkinINI(string searchFor)
     {
         DebugLog($"Searching skin.ini for {searchFor}", false);
-        StreamReader reader = new StreamReader(Path.Combine(mainSkinPath, "skin.ini"));
+        StreamReader reader = new StreamReader(Path.Combine(helperSkinPath, "skin.ini"));
         string currLine = null;
         while((currLine = reader.ReadLine()) != null)
         {
