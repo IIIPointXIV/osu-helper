@@ -20,6 +20,7 @@
 - Override combo colors
 - Rename skins
 - Search skins
+- Change from using regestry to using local .txt file for settings
 
 # How To Use
 1. Download exe from latest [release](https://github.com/IIIPointXIV/osu-helper/releases).
