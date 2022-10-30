@@ -19,6 +19,7 @@
 - Make a random skin from those shown
 - Override combo colors
 - Rename skins
+- Search skins
 
 # How To Use
 1. Download exe from latest [release](https://github.com/IIIPointXIV/osu-helper/releases).
