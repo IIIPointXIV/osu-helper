@@ -9,13 +9,14 @@ namespace osu_helper
         [STAThread]
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler (OnProcessExit); 
             form.FormLayout((args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false));
             Application.Run(form);
         }
 
         static void OnProcessExit(object sender, EventArgs e)
         {
-            form.OnProcessExit();
+            form.SaveEditedValues();
         }   
     }
 }

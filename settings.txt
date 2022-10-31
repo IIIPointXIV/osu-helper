@@ -1,0 +1,2 @@
+writeCurrSkin,Unchecked
+disableSkinChanges,Unchecked
