@@ -60,7 +60,7 @@ public class Form1 : Form
         makeInstafadeBox,
         expandingCursor,
     };
-    bool debugMode = true;
+    bool debugMode = false;
     bool spamLogs = false;
     
     public void FormLayout(bool debugModeArgs, bool spamLogsArgs)
@@ -214,19 +214,9 @@ public class Form1 : Form
         };
         skinFilterSelector.KeyPress += (sender, thisEvent) =>
         {
-            if (thisEvent.KeyChar.Equals(Keys.Enter) || thisEvent.KeyChar.Equals(Keys.Return))
+            if (thisEvent.KeyChar.Equals((char)13))
             {
-                if(!skinFilterSelector.Items.Contains(skinFilterSelector.Text) && !String.IsNullOrWhiteSpace(skinFilterSelector.Text) &&
-                        skinFilterSelector.Text != "All" && skinFilterSelector.Text != ",")
-                {
-                    skinFilterSelector.Items.Add(skinFilterSelector.Text);
-                    ChangeRegValue(RegValueNames.skinFilters, (GetRegValue(RegValueNames.skinFilters) == null ? "" : GetRegValue(RegValueNames.skinFilters) + ",") + skinFilterSelector.Text);
-                }
-                else if(skinFilterSelector.Text == ",")
-                {
-                    skinFilterSelector.Text = "All";
-                    DebugLog("You cannot add \",\" as a prefix", true);
-                }
+                AddToSkinFilters();
                 thisEvent.Handled = true;
             }
         };
@@ -568,11 +558,7 @@ public class Form1 : Form
                 ChangeRegValue(RegValueNames.hiddenSkinFilter, skinFilterSelector.Text);
                 hiddenSkinFiltersText.Text = skinFilterSelector.Text;
             }
-            if(!skinFilterSelector.Items.Contains(skinFilterSelector.Text))
-            {
-                skinFilterSelector.Items.Add(skinFilterSelector.Text);
-                ChangeRegValue(RegValueNames.skinFilters, (String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFilters)) ? "" : ",") + skinFilterSelector.Text);
-            }
+            AddToSkinFilters();
             skinFilterSelector.Text = "All";
         }
         else if(sender == showFilteredSkinsButton)
@@ -585,6 +571,7 @@ public class Form1 : Form
                 skinFilterSelector.Text = "All";
                 DebugLog("You cannot use \",\" as a prefix", true);
             }
+            AddToSkinFilters();
         }
 
         if(!String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.hiddenSkinFilter)))
@@ -652,6 +639,21 @@ public class Form1 : Form
             ChangeRegValue(RegValueNames.skinName, "");
 
         EnableAllControls(true);
+    }
+
+    private void AddToSkinFilters()
+    {
+        if(skinFilterSelector.Text == ",")
+        {
+            skinFilterSelector.Text = "All";
+            DebugLog("You cannot add \",\" as a prefix", true);
+        }
+        else if(skinFilterSelector.Text != "All" && !skinFilterSelector.Items.Contains(skinFilterSelector.Text))
+        {
+            skinFilterSelector.Items.Add(skinFilterSelector.Text);
+            ChangeRegValue(RegValueNames.skinFilters,
+                (String.IsNullOrWhiteSpace(GetRegValue(RegValueNames.skinFilters)) ? "" : GetRegValue(RegValueNames.skinFilters) + ",") + skinFilterSelector.Text);
+        }
     }
 
     private void OpenSkinFolder_Click(object sender, EventArgs e)
@@ -1339,7 +1341,7 @@ public class Form1 : Form
     {
         try
         {
-            DebugLog($"Reg value of {valName.ToString()} is \"{Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", valName.ToString(), null).ToString()}\"", false);
+            DebugLog($"Reg value of {valName.ToString()} is \"{Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", ((int)valName).ToString(), null).ToString()}\"", true);
             return Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\osuHelper", ((int)valName).ToString(), null).ToString();
         }
         catch
