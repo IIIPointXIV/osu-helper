@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Net.Mime;
 using System.Reflection;
@@ -22,6 +23,7 @@ public class Form1 : Form
         private Button showFilteredSkinsButton;
         private Button hideSelectedSkinFilterButton;
         private Button deleteSkinSelectorButton;
+        private Button renameSkinButton;
     private System.Windows.Forms.OpenFileDialog openFileDialog1;
     // CheckBoxes
         private CheckBox writeCurrSkinBox;
@@ -44,7 +46,6 @@ public class Form1 : Form
     private string helperSkinPath;
     private enum ValueNames
     {
-        selectedSkinName,
         disableCursorTrail,
         osuPath,
         selectedSkinFilter,
@@ -64,8 +65,10 @@ public class Form1 : Form
     };
     bool debugMode = false;
     bool spamLogs = false;
+    public static Rename rename = new Rename();
+
     List<object> tempControls = new List<object>(); //for saving on exit
-    Dictionary<ValueNames, string> savedValues = new Dictionary<ValueNames, string>();
+    Dictionary<ValueNames, string> loadedValues = new Dictionary<ValueNames, string>();
     
     public void FormLayout(bool debugModeArgs, bool spamLogsArgs)
     {
@@ -209,6 +212,17 @@ public class Form1 : Form
         };
         openSkinFolderButton.Click += new EventHandler(OpenSkinFolder_Click);
         Controls.Add(openSkinFolderButton);
+        
+        renameSkinButton = new System.Windows.Forms.Button()
+        {
+            Left = 440,
+            Top = 737,
+            Width = 107,
+            Font = mainFont,
+            Text = "Rename Skin",
+        };
+        renameSkinButton.Click += new EventHandler(RenameSkin_Click);
+        Controls.Add(renameSkinButton);
 
         skinFilterSelector = new ComboBox()
         {
@@ -420,6 +434,8 @@ public class Form1 : Form
         {
             tempControls.Add(thing);
         }
+        //string test = "skin name";
+        //rename.InputBox("Rename", "Rename:", ref test);
     }
 
     private void SetupSkinChangeCheckBoxes()
@@ -626,7 +642,7 @@ public class Form1 : Form
             Controls.Add(osuSkinsListBox);
         
         //if skin that was last selected is shown, select it
-        string lastSkinName = GetValue(ValueNames.selectedSkinName);
+        string lastSkinName = GetValue(ValueNames.selectedSkin);
         if(!String.IsNullOrWhiteSpace(lastSkinName) && osuSkinsListBox.Items.IndexOf(lastSkinName) != -1)
         {
             osuSkinsListBox.SetSelected(osuSkinsListBox.Items.IndexOf(lastSkinName), true);
@@ -1284,8 +1300,8 @@ public class Form1 : Form
 
     private string GetValue(ValueNames valName)
     {
-        if(savedValues.Keys.Contains(valName))
-            return savedValues[valName];
+        if(loadedValues.Keys.Contains(valName))
+            return loadedValues[valName];
         else
             return null;
         /* try
@@ -1328,7 +1344,7 @@ public class Form1 : Form
             {
                 curLineArr[1] = curLine.Replace("skinFilterSelector,", "");
             }
-            savedValues.Add((ValueNames)Enum.Parse(typeof(ValueNames), curLineArr[0], true), curLineArr[1]);
+            loadedValues.Add((ValueNames)Enum.Parse(typeof(ValueNames), curLineArr[0], true), curLineArr[1]);
         }
         reader.Dispose();
         DebugLog("[Finished loading values from settings.txt]", false);
@@ -1383,6 +1399,32 @@ public class Form1 : Form
     }
 
 //MISC
+    private void RenameSkin_Click(object sender, EventArgs e)
+    {
+        if(osuSkinsListBox.SelectedItems.Count != 1)
+            return;
+
+        string renameTo = osuSkinsListBox.SelectedItem.ToString();
+
+        if(rename.InputBox("Rename", "Rename:", ref renameTo) == DialogResult.Cancel)
+            return;
+
+        while(renameTo.Contains('\\'))
+            if(rename.InputBox("Cannot contain \"\\\"", "Rename:", ref renameTo) == DialogResult.Cancel)
+                return;
+
+
+        renameTo = osuSkinsPathList[osuSkinsListBox.SelectedIndex].Replace(osuSkinsListBox.SelectedItem.ToString(), renameTo);
+        if(osuSkinsPathList[osuSkinsListBox.SelectedIndex] != renameTo)
+            Directory.Move(osuSkinsPathList[osuSkinsListBox.SelectedIndex], renameTo);
+
+        SearchOsuSkins(sender, e);
+
+        osuSkinsListBox.ClearSelected();
+
+        osuSkinsListBox.SetSelected(osuSkinsPathList.IndexOf(renameTo), true);
+    }
+
     private string SearchSkinINI(string searchFor)
     {
         DebugLog($"Searching skin.ini for {searchFor}", false);
@@ -1412,10 +1454,10 @@ public class Form1 : Form
     {
         if(osuSkinsListBox.SelectedItems.Count == 1)
             return osuSkinsPathList[osuSkinsListBox.SelectedIndex];
-        else if(String.IsNullOrWhiteSpace(GetValue(ValueNames.selectedSkinName)) || osuSkinsListBox.SelectedItems.Count > 1)
+        else if(String.IsNullOrWhiteSpace(GetValue(ValueNames.selectedSkin)) || osuSkinsListBox.SelectedItems.Count > 1)
             DebugLog("Multiple/no skins selected. Unable to get skin path.", true);
         else
-            return Path.Combine(osuPath, "skins", GetValue(ValueNames.selectedSkinName));
+            return Path.Combine(osuPath, "skins", GetValue(ValueNames.selectedSkin));
 
         return null;
     }
