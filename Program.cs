@@ -12,5 +12,10 @@ namespace osu_helper
             form.FormLayout((args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false));
             Application.Run(form);
         }
+
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            form.OnProcessExit();
+        }   
     }
 }

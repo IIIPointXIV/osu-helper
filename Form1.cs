@@ -1240,7 +1240,7 @@ public class Form1 : Form
         File.Delete(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
     }
 
-//Edit Reg Stuff
+//Edit Saving Stuff
     private void ChangeRegValue_Click(object sender, EventArgs e)
     {
         if(osuSkinsListBox.SelectedIndex == -1)
@@ -1351,6 +1351,10 @@ public class Form1 : Form
     }
 
 //MISC
+    public void OnProcessExit()
+    {
+        //save the values of things
+    }
     private string SearchSkinINI(string searchFor)
     {
         DebugLog($"Searching skin.ini for {searchFor}", false);
