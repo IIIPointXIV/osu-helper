@@ -1,4 +1,4 @@
 skinFilters,$,!,#,@,+
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
-selectedSkin,@The Emoji Skin
+selectedSkin,!!Cookiezi Clicker (Clean)

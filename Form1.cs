@@ -119,7 +119,7 @@ public class Form1 : Form
 
             try
             {
-                SearchOsuSkins(new Object(), new EventArgs());
+                FindOsuSkins(new Object(), new EventArgs());
             }
             catch
             {
@@ -171,6 +171,7 @@ public class Form1 : Form
             Top = 32,
             Font = searchBoxFont,
         };
+        searchSkinBox.KeyUp += UserSearchSkins;
         Controls.Add(searchSkinBox);
 
         osuSkinsListBox = new ListBox()
@@ -192,7 +193,7 @@ public class Form1 : Form
         Controls.Add(osuFolderPathBox);
         osuFolderPathBox.KeyPress += (sender, thisEvent) => 
         {
-            if (thisEvent.KeyChar.Equals(Keys.Enter) || thisEvent.KeyChar.Equals(Keys.Return))
+            if (thisEvent.KeyChar.Equals((char)13))
             {
                 if (!File.Exists(Path.Combine(osuFolderPathBox.Text, "osu!.exe")))
                 {
@@ -215,9 +216,9 @@ public class Form1 : Form
             Width = 43,
             Name = ValueNames.skinFilters.ToString(),
         };
-        skinFilterSelector.KeyPress += (sender, thisEvent) =>
+        skinFilterSelector.KeyUp += (sender, thisEvent) =>
         {
-            if (thisEvent.KeyChar.Equals((char)13))
+            if (thisEvent.KeyCode.Equals(Keys.Enter))
             {
                 AddToSkinFilters();
                 thisEvent.Handled = true;
@@ -264,7 +265,7 @@ public class Form1 : Form
             Left = 46,
             Text = "Show",
         };
-        showFilteredSkinsButton.Click += new EventHandler(SearchOsuSkins);
+        showFilteredSkinsButton.Click += new EventHandler(FindOsuSkins);
         Controls.Add(showFilteredSkinsButton);
 
         hideSelectedSkinFilterButton = new System.Windows.Forms.Button()
@@ -275,7 +276,7 @@ public class Form1 : Form
             Left = 102,
             Text = "Hide",
         };
-        hideSelectedSkinFilterButton.Click += new EventHandler(SearchOsuSkins);
+        hideSelectedSkinFilterButton.Click += new EventHandler(FindOsuSkins);
         Controls.Add(hideSelectedSkinFilterButton);
 
         changeOsuPathButton = new System.Windows.Forms.Button()
@@ -297,7 +298,7 @@ public class Form1 : Form
             Font = mainFont,
             Text = "Find Skins"
         };
-        searchOsuSkinsButton.Click += new EventHandler(SearchOsuSkins);
+        searchOsuSkinsButton.Click += new EventHandler(FindOsuSkins);
         Controls.Add(searchOsuSkinsButton);
 
         useSkinButton = new System.Windows.Forms.Button()
@@ -549,6 +550,38 @@ public class Form1 : Form
     }
 
 //MISC Skin handling
+    private void UserSearchSkins(object sender, KeyEventArgs keyEvent)
+    {
+        //searchSkinBox.Text = searchSkinBox.Text += (char)keyEvent.KeyCode;
+
+        if(keyEvent.KeyCode == Keys.Back)
+            FindOsuSkins(sender, new EventArgs());
+        osuSkinsListBox.BeginUpdate();
+
+        List<int> remove = new List<int>();
+
+        string searchFor = searchSkinBox.Text.ToLower();
+        for(int i = 0; i < osuSkinsListBox.Items.Count; i++)
+        {
+            if(!osuSkinsListBox.Items[i].ToString().ToLower().Contains(searchFor))
+            {
+                remove.Add(i);
+            }
+        }
+
+        remove.Reverse();
+        foreach(int i in remove)
+        {
+            osuSkinsListBox.Items.RemoveAt(i);
+            osuSkinsPathList.RemoveAt(i);
+        }
+        
+        if(osuSkinsListBox.Items.Count == 1)
+            osuSkinsListBox.SetSelected(0, true);
+
+        osuSkinsListBox.EndUpdate();
+        //keyEvent.Handled = true;
+    }
     private void ChangeOsuPathButton_Click(object sender, EventArgs e)
     {
         FolderBrowserDialog directorySelector = new FolderBrowserDialog()
@@ -577,9 +610,10 @@ public class Form1 : Form
         directorySelector.Dispose();
     }
 
-    private void SearchOsuSkins(object sender, EventArgs e)
+    private void FindOsuSkins(object sender, EventArgs e)
     {
-        EnableAllControls(false);
+        if(sender != searchSkinBox)
+            EnableAllControls(false);
 
         if(sender == hideSelectedSkinFilterButton)
         {
@@ -670,7 +704,8 @@ public class Form1 : Form
         /* if(!osuSkinsListBox.Items.Contains(skinFilterSelector.Text) && !String.IsNullOrWhiteSpace(GetValue(ValueNames.selectedSkinName))) //if that was last selected is not shown,
             ChangeRegValue(ValueNames.selectedSkinName, ""); */
 
-        EnableAllControls(true);
+        if(sender != searchSkinBox)
+            EnableAllControls(true);
     }
 
     private void AddToSkinFilters()
@@ -1428,7 +1463,7 @@ public class Form1 : Form
         if(osuSkinsPathList[osuSkinsListBox.SelectedIndex] != renameTo)
             Directory.Move(osuSkinsPathList[osuSkinsListBox.SelectedIndex], renameTo);
 
-        SearchOsuSkins(sender, e);
+        FindOsuSkins(sender, e);
 
         osuSkinsListBox.ClearSelected();
 
