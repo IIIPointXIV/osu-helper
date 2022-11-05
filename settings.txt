@@ -1,3 +1,4 @@
+skinFilters,$,!,#,@,+
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
-selectedSkin,#Ai Hayasaka v2.0
+selectedSkin,@The Emoji Skin

@@ -1,0 +1,3 @@
+writeCurrSkin,Unchecked
+disableSkinChanges,Unchecked
+selectedSkin,#osu! Default Skin Improved

@@ -1,19 +1,9 @@
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
-using System.Net.Mime;
-using System.Reflection;
-using System.Linq;
-using System.Diagnostics;
-using System.Collections.Generic;
-using Microsoft.Win32;
 using System;
 using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 
 public class Rename : Form
 {
-
     public DialogResult InputBox(string title, string promptText, ref string value)
     {
         Form form = new Form();
