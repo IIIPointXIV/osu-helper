@@ -1,4 +1,3 @@
 skinFilters,$,!,#,@,+
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
-selectedSkin,!!Cookiezi Clicker (Clean)

@@ -139,27 +139,26 @@ public class Form1 : Form
     private void SetupToolTip()
     {
         toolTip = new ToolTip();
-        {
-            toolTip.SetToolTip(searchOsuSkinsButton, "Searches osu! folder for skins");
-            toolTip.SetToolTip(changeOsuPathButton, "Set the path that houses the osu!.exe");
-            toolTip.SetToolTip(writeCurrSkinBox, "Writes the name of the current skin to a text\nfile in the \"Skins\" folder. Helpful for streamers.");
-            toolTip.SetToolTip(randomSkinButton, "Selects random skin from visible skins");
-            toolTip.SetToolTip(openSkinFolderButton, "Opens current skin folder");
-            toolTip.SetToolTip(useSkinButton, "Changes to selected skin. If multiple\nare selected, it chooses a random one.");
-            toolTip.SetToolTip(deleteSkinButton, "Moves selected skin to \"Deleted Skins\" folder");
-            toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
-            toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible\nChecked means that they are shown.");
-            toolTip.SetToolTip(skinFilterSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
-            toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
-            toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
-            toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix.\nResets hidden folders.");
-            toolTip.SetToolTip(hideSelectedSkinFilterButton, "Hides skins with selected prefix.\nPress show button to reset them.");
-            toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
-            toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
-            toolTip.SetToolTip(hiddenSkinFiltersText, "The skins with these prefixes are hidden from the list");
-            toolTip.SetToolTip(expandingCursorBox, "Checked means the cursor will expand on click");
-            //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
-        }
+        toolTip.SetToolTip(searchOsuSkinsButton, "Searches osu! folder for skins");
+        toolTip.SetToolTip(changeOsuPathButton, "Set the path that houses the osu!.exe");
+        toolTip.SetToolTip(writeCurrSkinBox, "Writes the name of the current skin to a text\nfile in the \"Skins\" folder. Helpful for streamers.");
+        toolTip.SetToolTip(randomSkinButton, "Selects random skin from visible skins");
+        toolTip.SetToolTip(openSkinFolderButton, "Opens current skin folder");
+        toolTip.SetToolTip(useSkinButton, "Changes to selected skin. If multiple\nare selected, it chooses a random one.");
+        toolTip.SetToolTip(deleteSkinButton, "Moves selected skin to \"Deleted Skins\" folder");
+        toolTip.SetToolTip(showSkinNumbersBox, "Controls if numbers are shown on hitcircles");
+        toolTip.SetToolTip(showSliderEndsBox, "Controls if slider ends are visible\nChecked means that they are shown.");
+        toolTip.SetToolTip(skinFilterSelector, "Allows you to designate a prefix on the skin folders to categorize the skins");
+        toolTip.SetToolTip(disableSkinChangesBox, "Disables all changes to skin files and only copies them over");
+        toolTip.SetToolTip(disableCursorTrailBox, "Checked means no cursor trail is shown.\nWill not add trail to skin that does not have it.");
+        toolTip.SetToolTip(showFilteredSkinsButton, "Shows only the skins with the selected prefix.\nResets hidden folders.");
+        toolTip.SetToolTip(hideSelectedSkinFilterButton, "Hides skins with selected prefix.\nPress show button to reset them.");
+        toolTip.SetToolTip(deleteSkinSelectorButton, "Deletes skin prefix from list");
+        toolTip.SetToolTip(showComboBurstsBox, "If checked, combo bursts will be shown if the skin has them");
+        toolTip.SetToolTip(hiddenSkinFiltersText, "The skins with these prefixes are hidden from the list");
+        toolTip.SetToolTip(expandingCursorBox, "Checked means the cursor will expand on click");
+        toolTip.SetToolTip(searchSkinBox, "Filter the skins by what you put here");
+        //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
     }
 
     private void SetupOtherControls()
@@ -172,6 +171,14 @@ public class Form1 : Form
             Font = searchBoxFont,
         };
         searchSkinBox.KeyUp += UserSearchSkins;
+        searchSkinBox.TextChanged += (sender, e) =>
+        {
+            int textWidth = TextRenderer.MeasureText(searchSkinBox.Text, searchBoxFont).Width;
+            if(textWidth > 95)
+                searchSkinBox.Width = textWidth+5;
+            else if(textWidth < searchSkinBox.Width-5)
+                searchSkinBox.Width = (textWidth<95 ? 100 : textWidth+5);
+        };
         Controls.Add(searchSkinBox);
 
         osuSkinsListBox = new ListBox()
@@ -582,6 +589,7 @@ public class Form1 : Form
         osuSkinsListBox.EndUpdate();
         //keyEvent.Handled = true;
     }
+    
     private void ChangeOsuPathButton_Click(object sender, EventArgs e)
     {
         FolderBrowserDialog directorySelector = new FolderBrowserDialog()
