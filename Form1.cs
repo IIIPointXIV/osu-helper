@@ -59,6 +59,7 @@ public class Form1 : Form
         //skinFilterSelector,
         writeCurrSkin,
         selectedSkin,
+        searchSkinsText,
     };
     bool debugMode = false;
     bool spamLogs = false;
@@ -98,8 +99,8 @@ public class Form1 : Form
 
         this.MaximizeBox = false;
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
-        this.Name = "osu!helper";
-        this.Text = "osu!helper";
+        this.Name = "Skin Manager";
+        this.Text = "Skin Manager";
         this.Size = new Size(800, 800);
 
         SetupOtherControls();
@@ -169,6 +170,7 @@ public class Form1 : Form
             Width = 100,
             Top = 32,
             Font = searchBoxFont,
+            Name = ValueNames.searchSkinsText.ToString(),
         };
         searchSkinBox.KeyUp += UserSearchSkins;
         searchSkinBox.TextChanged += (sender, e) =>
@@ -180,6 +182,8 @@ public class Form1 : Form
                 searchSkinBox.Width = (textWidth<95 ? 100 : textWidth+5);
         };
         Controls.Add(searchSkinBox);
+        if(!IsSavedValueEmpty(ValueNames.searchSkinsText))
+            searchSkinBox.Text = GetValue(ValueNames.searchSkinsText);
 
         osuSkinsListBox = new ListBox()
         {
@@ -196,6 +200,7 @@ public class Form1 : Form
             Left = 87,
             Width = 300,
             Font = mainFont,
+            Name = ValueNames.osuPath.ToString(),
         };
         Controls.Add(osuFolderPathBox);
         osuFolderPathBox.KeyPress += (sender, thisEvent) => 
@@ -466,6 +471,7 @@ public class Form1 : Form
     {
         CheckBox workingCheckBox;
         int indexInControls;
+        CheckState defaultCheckState = CheckState.Indeterminate;
 
         for (int i = 0; i <= 6; i++)
         {
@@ -514,6 +520,7 @@ public class Form1 : Form
                 case 5:
                     Controls[indexInControls].Name = ValueNames.showHitCircles.ToString();
                     Controls[indexInControls].Text = "Show Hitcircles";
+                    defaultCheckState = CheckState.Checked;
                     showHitCirclesBox = (CheckBox)Controls[indexInControls];
                     break;
                 case 6:
@@ -549,7 +556,7 @@ public class Form1 : Form
                     ((CheckBox)Controls[indexInControls]).CheckState = CheckState.Unchecked;
                     break;
                 default:
-                    ((CheckBox)Controls[indexInControls]).CheckState = CheckState.Indeterminate;
+                    ((CheckBox)Controls[indexInControls]).CheckState = defaultCheckState;
                     break;
             }
             DebugLog($"CheckBox Name is: {Controls[indexInControls].Name} | Text is: {Controls[indexInControls].Text} | Checked: {((CheckBox)Controls[indexInControls]).Checked.ToString()}", false);
@@ -807,6 +814,7 @@ public class Form1 : Form
             ShowComboBursts(showComboBurstsBox.CheckState);
             ShowHitLighting(showHitLightingBox.CheckState);
             ShowHitCircles(showHitCirclesBox.CheckState);
+            ChangeExpandingCursor(expandingCursorBox.CheckState);
             //MakeInstafade(makeInstafadeBox.CheckState);
             DebugLog("[FINISHED EDITING SKIN]", false);
         }
@@ -849,8 +857,13 @@ public class Form1 : Form
 //Skin editing
     private void ChangeExpandingCursor(CheckState expand)
     {
+        DebugLog($"ChangeExpandingCursor({expand.ToString()}) called", false);
+        
         if(expand == CheckState.Indeterminate)
+        {
+            RevertSkinIni("CursorExpand:");
             return;
+        }
 
         EnableAllControls(false);
         if(expand == CheckState.Checked)
@@ -948,12 +961,12 @@ public class Form1 : Form
         DebugLog($"ShowHitCircles({showState}) called", false);
 
         if(showState == CheckState.Indeterminate)
-            return;
+            showState = CheckState.Checked;
 
         bool show = (showState == CheckState.Checked);
 
         EnableAllControls(false);
-        List<string> fileNames = new List<string>()
+        string[] fileNames = 
         {
             "hitcircle.png",
             "hitcircle@2x.png",
@@ -966,24 +979,17 @@ public class Form1 : Form
         };
         if(show)
         {
-            foreach(string curName in fileNames)
-            {
-                if(File.Exists(Path.Combine(GetCurrentSkinPath(), curName)))
-                {
-                    File.Copy(Path.Combine(GetCurrentSkinPath(), curName), Path.Combine(helperSkinPath, curName), true);
-                    if(spamLogs)
-                        DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), curName)} to {Path.Combine(helperSkinPath, curName)}", false);
-                }
-            }
+            CopyFilesToHelperSkin(fileNames);
         }
         else
         {
             Bitmap emptyImage = new Bitmap(1,1);
             foreach(string curName in fileNames)
             {
-                emptyImage.Save(Path.Combine(helperSkinPath, curName));
+                string helperSkinFilePath = Path.Combine(helperSkinPath, curName);
+                emptyImage.Save(helperSkinFilePath);
                 if(spamLogs)
-                    DebugLog($"Copying empty image to {Path.Combine(helperSkinPath, curName)}", false);
+                    DebugLog($"Copying empty image to {helperSkinFilePath}", false);
             }
             
             emptyImage.Dispose();
@@ -995,55 +1001,62 @@ public class Form1 : Form
     {
         DebugLog($"ShowHitLighting({showState}) called", false);
 
-        if(showState == CheckState.Indeterminate)
-            return;
-
-        bool show = (showState == CheckState.Checked);
-
         EnableAllControls(false);
-        List<string> fileNames = new List<string>()
+        string[] fileNames =
         {
             "lighting.png",
             "lighting@2x.png",
         };
 
-        if(show)
+        if(showState == CheckState.Indeterminate)
         {
+            CopyFilesToHelperSkin(fileNames);
+        }
+        else if(showState == CheckState.Checked)
+        {
+            string currentSkinFilePath;
+            string helperSkinFilePath;
             foreach(string curName in fileNames)
             {
-                if(File.Exists(Path.Combine(GetCurrentSkinPath(), curName)))
+                currentSkinFilePath = Path.Combine(GetCurrentSkinPath(), curName);
+                helperSkinFilePath = Path.Combine(helperSkinPath, curName);
+
+                if(File.Exists(currentSkinFilePath))
                 {
-                    Image thisImg = Image.FromFile(Path.Combine(GetCurrentSkinPath(), curName));
+                    Image thisImg = Image.FromFile(currentSkinFilePath);
                     if(thisImg.Height > 100)
                     {
-                        File.Copy(Path.Combine(GetCurrentSkinPath(), curName), Path.Combine(helperSkinPath, curName), true);
+                        File.Copy(currentSkinFilePath, helperSkinFilePath, true);
                         thisImg.Dispose();
                         if(spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkinPath(), curName)} to {Path.Combine(helperSkinPath, curName)}", false);
+                            DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
                         
                         continue;
                     }
                     thisImg.Dispose();
-                    File.Delete(Path.Combine(helperSkinPath, curName));
+                    File.Delete(helperSkinFilePath);
                     if(spamLogs)
-                        DebugLog($"Deleting {Path.Combine(helperSkinPath, curName)}", false);
+                        DebugLog($"Deleting {helperSkinFilePath}", false);
                 }
-                else if(File.Exists(Path.Combine(helperSkinPath, curName)))
+                else if(File.Exists(helperSkinFilePath))
                 {
-                    File.Delete(Path.Combine(helperSkinPath, curName));
+                    File.Delete(helperSkinFilePath);
                     if(spamLogs)
-                        DebugLog($"Deleting {Path.Combine(helperSkinPath, curName)}", false);
+                        DebugLog($"Deleting {helperSkinFilePath}", false);
                 }
             }
         }
         else
         {
             Image emptyImage = new Bitmap(1,1);
+            string helperSkinFilePath;
             foreach(string name in fileNames)
             {
-                emptyImage.Save(Path.Combine(helperSkinPath, name));
+                helperSkinFilePath = Path.Combine(helperSkinPath, name);
+
+                emptyImage.Save(helperSkinFilePath);
                 if(spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(helperSkinPath, name)}", false);
+                    DebugLog($"Saving empty image to {helperSkinFilePath}", false);
             }
             emptyImage.Dispose();
         }
@@ -1055,13 +1068,13 @@ public class Form1 : Form
         DebugLog($"ShowComboBursts({showState}) called", false);
 
         if(showState == CheckState.Indeterminate)
-            return;
+            showState = CheckState.Unchecked;
 
         bool show = (showState == CheckState.Checked);
 
         EnableAllControls(false);
         Bitmap emptyImage = new Bitmap(1,1);
-        List<string> fileNames = new List<string>()
+        string[] fileNames =
         {
             "comboburst",
             "comboburst@2x",
@@ -1313,6 +1326,42 @@ public class Form1 : Form
         File.Delete(skinINIPath.Replace("skin.ini", "skin.ini.temp"));
     }
 
+    private void RevertSkinIni(string searchFor)
+    {
+        DebugLog($"Attempting to restore {searchFor}. In the skin.ini", false);
+        StreamReader origINIReader = new StreamReader(Path.Combine(GetCurrentSkinPath(), "skin.ini"));
+        string currLine;
+
+        while((currLine = origINIReader.ReadLine()) != null)
+        {
+            if(currLine.ToLower().Contains(searchFor.ToLower()))
+                break;
+        }
+
+        origINIReader.Close();
+        origINIReader.Dispose();
+
+        if(currLine == null)
+            EditSkinIni(searchFor, "", "really long word that should not be there");
+        else
+            EditSkinIni(searchFor, currLine, "really long word that should not be there");
+    }
+
+    private void CopyFilesToHelperSkin(string[] fileNames)
+    {
+        foreach(string curName in fileNames)
+        {
+            string currentSkinFilePath = Path.Combine(GetCurrentSkinPath(), curName);
+            string helperSkinFilePath = Path.Combine(helperSkinPath, curName);
+            if(File.Exists(currentSkinFilePath))
+            {
+                File.Copy(currentSkinFilePath, helperSkinFilePath, true);
+                if(spamLogs)
+                    DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
+            }
+        }
+    }
+
 //Edit Saving Stuff
     private void OnClick(object sender, EventArgs e)
     {
@@ -1331,7 +1380,7 @@ public class Form1 : Form
         else if(sender == showHitCirclesBox)
             ShowHitCircles(showHitCirclesBox.CheckState);
         else if(sender == expandingCursorBox)
-            ShowHitCircles(expandingCursorBox.CheckState);
+            ChangeExpandingCursor(expandingCursorBox.CheckState);
         else if(sender == makeInstafadeBox)
             MakeInstafade(makeInstafadeBox.CheckState);
         else
@@ -1410,30 +1459,45 @@ public class Form1 : Form
             File.Create("settings.txt");
 
         StreamWriter writer = new StreamWriter("settings.txt");
-
-        foreach(var thing in tempControls)
+        
+        foreach(Control currentObj in tempControls)
         {
-            //DebugLog(thing.GetType().ToString(), true);
-            if(thing.GetType().ToString().Equals("System.Windows.Forms.CheckBox"))
+            if(currentObj.Name == ValueNames.skinFilters.ToString()) //is the skin filters
             {
-                if(((CheckBox)thing).Name == "hiddenSkinFilter")
-                    continue;
-                if(((CheckBox)thing).CheckState != CheckState.Indeterminate)
-                    writer.WriteLine(((CheckBox)thing).Name + "," + ((CheckBox)thing).CheckState.ToString());
-            }
-            else if(thing.GetType().ToString().Equals("System.Windows.Forms.ComboBox")) //is the skin filters
-            {
-                ComboBox now = (ComboBox)thing;
-                if(now.Items.Count <= 1)
+                ComboBox skinFiltersBox = (ComboBox)currentObj;
+                if(skinFiltersBox.Items.Count <= 1)
                     continue;
 
-                string toWrite = now.Name + ",";
-                for(int i = 0; i < now.Items.Count; i++)
+                string toWrite = skinFiltersBox.Name + ",";
+                for(int i = 0; i < skinFiltersBox.Items.Count; i++)
                 {
-                    if(now.Items[i].ToString() != "All")
-                        toWrite += now.Items[i] + (i == now.Items.Count-1 ? "" : ",");
+                    if(skinFiltersBox.Items[i].ToString() != "All")
+                        toWrite += skinFiltersBox.Items[i] + (i == skinFiltersBox.Items.Count-1 ? "" : ",");
                 }
                 writer.WriteLine(toWrite);
+            }
+            else
+            {
+                if(currentObj.Name == ValueNames.hiddenSkinFilter.ToString())
+                    continue;
+                else if(currentObj.GetType().ToString() == new CheckBox().GetType().ToString() &&
+                    (((CheckBox)currentObj).CheckState != CheckState.Indeterminate))
+                    writer.WriteLine(((CheckBox)currentObj).Name + "," + ((CheckBox)currentObj).CheckState.ToString());
+                else if(currentObj.Name == ValueNames.selectedSkinFilter.ToString())
+                {
+                    if(currentObj.Text != "All" && !String.IsNullOrWhiteSpace(currentObj.Text))
+                        writer.WriteLine(ValueNames.selectedSkinFilter.ToString() + "," + currentObj.Text);
+                }
+                else if(currentObj.GetType().ToString() == new TextBox().GetType().ToString())
+                {
+                    DebugLog(currentObj.Text + " | " + currentObj.Name, true);
+                    if(String.IsNullOrWhiteSpace(currentObj.Text))
+                        continue;
+                    if(currentObj.Name == ValueNames.osuPath.ToString())
+                        continue;
+
+                    writer.WriteLine(currentObj.Name + "," + currentObj.Text);
+                }
             }
         }
         if(osuSkinsListBox.SelectedItems.Count == 1)
@@ -1441,12 +1505,6 @@ public class Form1 : Form
 
         if(osuPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!"))
             writer.WriteLine(ValueNames.osuPath.ToString() + "," + osuPath);
-
-        if(skinFilterSelector.Text != "All" && !String.IsNullOrWhiteSpace(skinFilterSelector.Text))
-            writer.WriteLine(ValueNames.selectedSkinFilter.ToString() + "," + skinFilterSelector.Text);
-
-        if(!String.IsNullOrWhiteSpace(hiddenSkinFiltersText.Text))
-            writer.WriteLine(ValueNames.hiddenSkinFilter.ToString() + "," + hiddenSkinFiltersText.Text);
         
         writer.Dispose();
     }

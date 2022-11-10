@@ -1,3 +1,4 @@
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
-selectedSkin,#WhiteCat 2.1 _ old
+expandingCursor,Unchecked
+selectedSkin,#fierymod_v8_realest_ver_two
