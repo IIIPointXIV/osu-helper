@@ -1,0 +1,7 @@
+searchSkinsText,dfd
+writeCurrSkin,Unchecked
+disableSkinChanges,Unchecked
+showSkinNumbers,Unchecked
+showHitCircles,Checked
+expandingCursor,Checked
+selectedSkin,#Printstream By Kitley

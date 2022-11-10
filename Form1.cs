@@ -64,11 +64,11 @@ public class Form1 : Form
     bool debugMode = false;
     bool spamLogs = false;
     private Rename rename = new Rename();
-    List<object> tempControls = new List<object>(); //for saving on exit
     Dictionary<ValueNames, string> loadedValues = new Dictionary<ValueNames, string>();
     
     public void FormLayout(bool debugModeArgs, bool spamLogsArgs)
     {
+        this.FormClosing += new FormClosingEventHandler(SaveEditedValues);
         debugMode = debugModeArgs;
         spamLogs = spamLogsArgs;
         DebugLog("[STARTING UP]", false);
@@ -129,10 +129,6 @@ public class Form1 : Form
         }
         DebugLog("[STARTUP FINISHED. WAITING FOR INPUT]", false);
 
-        foreach(object thing in Controls)
-        {
-            tempControls.Add(thing);
-        }
         //string test = "skin name";
         //rename.InputBox("Rename", "Rename:", ref test);
     }
@@ -1452,7 +1448,7 @@ public class Form1 : Form
         DebugLog("[Finished loading values from settings.txt]", false);
     }
     
-    public void SaveEditedValues()
+    public void SaveEditedValues(object sender, EventArgs e)
     {
         //save the values of things
         if(!File.Exists("settings.txt"))
@@ -1460,7 +1456,7 @@ public class Form1 : Form
 
         StreamWriter writer = new StreamWriter("settings.txt");
         
-        foreach(Control currentObj in tempControls)
+        foreach(Control currentObj in Controls)
         {
             if(currentObj.Name == ValueNames.skinFilters.ToString()) //is the skin filters
             {
@@ -1490,7 +1486,6 @@ public class Form1 : Form
                 }
                 else if(currentObj.GetType().ToString() == new TextBox().GetType().ToString())
                 {
-                    DebugLog(currentObj.Text + " | " + currentObj.Name, true);
                     if(String.IsNullOrWhiteSpace(currentObj.Text))
                         continue;
                     if(currentObj.Name == ValueNames.osuPath.ToString())
