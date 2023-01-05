@@ -1,4 +1,8 @@
+skinFilters,$,#,@,+
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
+showComboBursts,Checked
+showSkinNumbers,Checked
+showHitCircles,Checked
 expandingCursor,Unchecked
-selectedSkin,#fierymod_v8_realest_ver_two
+selectedSkin,#WhiteCat 2.1 _ old

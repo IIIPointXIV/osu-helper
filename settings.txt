@@ -1,7 +1,11 @@
-searchSkinsText,dfd
+skinFilters,!
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
+showComboBursts,Unchecked
+showHitLighting,Unchecked
 showSkinNumbers,Unchecked
+disableCursorTrail,Unchecked
+showSliderEnds,Unchecked
 showHitCircles,Checked
 expandingCursor,Checked
-selectedSkin,#Printstream By Kitley
+selectedSkin,!!!Skin Manager

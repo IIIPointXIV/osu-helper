@@ -41,6 +41,7 @@ public class Form1 : Form
     private List<string> osuSkinsPathList = new List<string>();
     private string osuPath;
     private string helperSkinPath;
+    private string managerFolderName = "!!!Skin Manager";
     private enum ValueNames
     {
         disableCursorTrail,
@@ -63,7 +64,7 @@ public class Form1 : Form
     };
     bool debugMode = false;
     bool spamLogs = false;
-    private Rename rename = new Rename();
+    private PopUp rename = new PopUp();
     Dictionary<ValueNames, string> loadedValues = new Dictionary<ValueNames, string>();
     
     public void FormLayout(bool debugModeArgs, bool spamLogsArgs)
@@ -95,7 +96,7 @@ public class Form1 : Form
         else
             osuPath = GetValue(ValueNames.osuPath);
 
-        helperSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
+        helperSkinPath = Path.Combine(osuPath, "skins", managerFolderName);
 
         this.MaximizeBox = false;
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -113,7 +114,7 @@ public class Form1 : Form
         if(osuPathDI.Exists)
         {
             if(!Directory.Exists(helperSkinPath))
-                osuPathDI.CreateSubdirectory("!!!osu!helper Skin");
+                osuPathDI.CreateSubdirectory(managerFolderName);
             
             if(!Directory.Exists(Path.Combine(osuPath, "skins", "Deleted Skins")))
                 osuPathDI.CreateSubdirectory("Deleted Skins");
@@ -133,6 +134,7 @@ public class Form1 : Form
         //rename.InputBox("Rename", "Rename:", ref test);
     }
     
+//Setup Things
     private void SetupToolTip()
     {
         toolTip = new ToolTip();
@@ -168,7 +170,7 @@ public class Form1 : Form
             Font = searchBoxFont,
             Name = ValueNames.searchSkinsText.ToString(),
         };
-        searchSkinBox.KeyUp += UserSearchSkins;
+        searchSkinBox.KeyUp += UserSearchSkins_Click;
         searchSkinBox.TextChanged += (sender, e) =>
         {
             int textWidth = TextRenderer.MeasureText(searchSkinBox.Text, searchBoxFont).Width;
@@ -210,7 +212,7 @@ public class Form1 : Form
                 }
 
                 osuPath = osuFolderPathBox.Text;
-                helperSkinPath = Path.Combine(osuPath, "skins", "!!!osu!helper Skin");
+                helperSkinPath = Path.Combine(osuPath, "skins", managerFolderName);
                 OnClick(sender, thisEvent);
                 thisEvent.Handled = true;
             }
@@ -560,7 +562,7 @@ public class Form1 : Form
     }
 
 //MISC Skin handling
-    private void UserSearchSkins(object sender, KeyEventArgs keyEvent)
+    private void UserSearchSkins_Click(object sender, KeyEventArgs keyEvent)
     {
         //searchSkinBox.Text = searchSkinBox.Text += (char)keyEvent.KeyCode;
 
@@ -669,7 +671,7 @@ public class Form1 : Form
         {
             string skinName = skin.FullName.Replace(osuPath + "\\skins\\", "");
 
-            if(skinName != "!!!osu!helper Skin" && skinName != "Deleted Skins")
+            if(skinName != managerFolderName && skinName != "Deleted Skins")
             {
                 if(!hiddenSkinFiltersList.Contains(skinName.ElementAt<char>(0).ToString())) //true if skin does not have prefix that is supposed to be hidden
                 {
@@ -745,6 +747,10 @@ public class Form1 : Form
 
     private void DeleteSelectedSkin_Click(object sender, EventArgs e)
     {
+        PopUp confirm = new PopUp();
+        if(!confirm.Conformation("Are you sure you want to delete this skin?"))
+            return;
+
         EnableAllControls(false);
         if(osuSkinsListBox.SelectedItem == null)
         {
@@ -1476,7 +1482,7 @@ public class Form1 : Form
             {
                 if(currentObj.Name == ValueNames.hiddenSkinFilter.ToString())
                     continue;
-                else if(currentObj.GetType().ToString() == new CheckBox().GetType().ToString() &&
+                else if(currentObj is CheckBox &&
                     (((CheckBox)currentObj).CheckState != CheckState.Indeterminate))
                     writer.WriteLine(((CheckBox)currentObj).Name + "," + ((CheckBox)currentObj).CheckState.ToString());
                 else if(currentObj.Name == ValueNames.selectedSkinFilter.ToString())
@@ -1484,7 +1490,7 @@ public class Form1 : Form
                     if(currentObj.Text != "All" && !String.IsNullOrWhiteSpace(currentObj.Text))
                         writer.WriteLine(ValueNames.selectedSkinFilter.ToString() + "," + currentObj.Text);
                 }
-                else if(currentObj.GetType().ToString() == new TextBox().GetType().ToString())
+                else if(currentObj is TextBox)
                 {
                     if(String.IsNullOrWhiteSpace(currentObj.Text))
                         continue;
