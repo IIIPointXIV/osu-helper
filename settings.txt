@@ -1,11 +1,9 @@
-skinFilters,!
-writeCurrSkin,Unchecked
+skinFilters,!,#,+,$,=,@
 disableSkinChanges,Unchecked
-showComboBursts,Unchecked
-showHitLighting,Unchecked
-showSkinNumbers,Unchecked
-disableCursorTrail,Unchecked
-showSliderEnds,Unchecked
-showHitCircles,Checked
-expandingCursor,Checked
-selectedSkin,!!!Skin Manager
+showComboBursts,Indeterminate
+showHitLighting,Indeterminate
+showSkinNumbers,Indeterminate
+disableCursorTrail,Indeterminate
+showSliderEnds,Indeterminate
+showHitCircles,Indeterminate
+expandingCursor,Unchecked

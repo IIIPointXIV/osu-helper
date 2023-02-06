@@ -1,8 +1,10 @@
+searchSkinsText,tran
 skinFilters,$,#,@,+
 writeCurrSkin,Unchecked
 disableSkinChanges,Unchecked
 showComboBursts,Checked
 showSkinNumbers,Checked
+showSliderEnds,Unchecked
 showHitCircles,Checked
 expandingCursor,Unchecked
-selectedSkin,#WhiteCat 2.1 _ old
+selectedSkin,#Trans 1.1

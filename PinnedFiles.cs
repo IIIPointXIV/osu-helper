@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Collections.Generic;
-using System;
 using System.Windows.Forms;
 
 public class PinnedFiles : Form
@@ -38,7 +37,7 @@ public class PinnedFiles : Form
 
     Dictionary<fileGroups, string[]> pinnableFiles = new Dictionary<fileGroups, string[]>()
     {
-        
+
         {fileGroups.songSelection, new string[]
         {
             "selection-mode",
@@ -147,7 +146,7 @@ public class PinnedFiles : Form
         {
             "fail-background",
         }},
-        
+
         {fileGroups.scoreBar, new string[]
         {
             "scorebar-bg",
@@ -158,7 +157,7 @@ public class PinnedFiles : Form
             "scorebar-kidanger2",
             "scorebar-marker",
         }},
-        
+
         {fileGroups.countdown, new string[]
         {
             "ready",
@@ -167,21 +166,21 @@ public class PinnedFiles : Form
             "count1",
             "go",
         }},
-        
+
         {fileGroups.comboBurst, new string[]
         {
             "comboburst",
             "comboburst-mania",
             "comboburst-fruits",
         }},
-        
+
         {fileGroups.hitcircle, new string[]
         {
             "hitcircleselect",
             "hitcircle",
             "hitcircleoverlay",
         }},
-        
+
         {fileGroups.inputOverlay, new string[]
         {
             "inputoverlay-background",
@@ -189,35 +188,35 @@ public class PinnedFiles : Form
         }},
 
         {fileGroups.approachCircle, new string[]
-        {        
+        {
             "approachcircle",
         }},
-        
+
         {fileGroups.followPoint, new string[]
-        {        
+        {
             "followpoint",
             "followpoint-0",
         }},
-        
+
         {fileGroups.reverseArrow, new string[]
-        {        
+        {
             "reversearrow",
         }},
-        
+
         {fileGroups.sliderStartCircle, new string[]
-        {        
+        {
             "sliderstartcircle",
             "sliderstartcircleoverlay",
         }},
-        
+
         {fileGroups.sliderEndCircle, new string[]
-        {        
+        {
             "sliderendcircle",
             "sliderendcircleoverlay",
         }},
-        
+
         {fileGroups.sliderBall, new string[]
-        {        
+        {
             "sliderfollowcircle",
             "sliderfollowcircle-0",
             "sliderb",
@@ -225,9 +224,9 @@ public class PinnedFiles : Form
             "sliderb-nd",
             "sliderb-spec",
         }},
-        
+
         {fileGroups.spinner, new string[]
-        {        
+        {
             "spinner-background",
             "spinner-metre",
             "spinner-bottom",
@@ -243,29 +242,29 @@ public class PinnedFiles : Form
             "spinner-circle",
             "spinner-approachcircle",
         }},
-        
+
         {fileGroups.hit0, new string[]
-        {        
+        {
             "hit0",
-            "hit0-0",           
+            "hit0-0",
         }},
-        
+
         {fileGroups.hit50, new string[]
-        {        
+        {
             "hit50",
             "hit50-0",
         }},
-        
+
         {fileGroups.hit100, new string[]
-        {        
+        {
             "hit100",
             "hit100-0",
             "hit100k",
             "hit100k-0",
         }},
-        
+
         {fileGroups.hit300, new string[]
-        {        
+        {
             "hit300k",
             "hit300",
             "hit300-0",
@@ -273,22 +272,22 @@ public class PinnedFiles : Form
             "hit300g",
             "hit300g-0",
         }},
-        
+
         {fileGroups.hitLighting, new string[]
-        {        
+        {
             "lighting",
         }},
-        
+
         {fileGroups.pippidon, new string[]
-        {        
+        {
             "pippidonidle",
             "pippidonkiai",
             "pippidonfail",
             "pippidonclear",
         }},
-        
+
         {fileGroups.taiko, new string[]
-        {        
+        {
             "taiko-flower-group",
             "taiko-slider",
             "taiko-slider-fail",
@@ -312,17 +311,17 @@ public class PinnedFiles : Form
             "taiko-hit300k",
             "taiko-hit300g",
         }},
-        
+
         {fileGroups.fruitCatcher, new string[]
-        {        
+        {
             "fruit-catcher-idle",
             "fruit-catcher-kiai",
             "fruit-catcher-fail",
             "fruit-ryuuta",
         }},
-        
+
         {fileGroups.fruits, new string[]
-        {        
+        {
             "fruit-apple",
             "fruit-apple-overlay",
             "fruit-grapes",
@@ -336,9 +335,9 @@ public class PinnedFiles : Form
             "fruit-drop",
             "fruit-drop-overlay",
         }},
-        
+
         {fileGroups.target, new string[]
-        {        
+        {
             "target",
             "targetoverlay",
             "target-pt-1",

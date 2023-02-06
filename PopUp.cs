@@ -2,9 +2,9 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-public class PopUp : Form
+public static class PopUp
 {
-    public DialogResult InputBox(string title, string promptText, ref string value)
+    public static DialogResult InputBox(string title, string promptText, ref string value)
     {
         Form form = new Form();
         Label label = new Label();
@@ -46,7 +46,7 @@ public class PopUp : Form
         return dialogResult;
     }
 
-    public bool Conformation(string text)
+    public static bool Conformation(string text)
     {
         Form form = new Form();
         Label label = new Label();
