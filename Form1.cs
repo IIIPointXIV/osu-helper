@@ -40,8 +40,8 @@ public class Form1 : Form
     private ListBox osuSkinsListBox;
     private List<Skin> osuSkinsList = new List<Skin>();
     public static string osuPath { get; private set; }
-    private Skin helperSkin;
-    private string managerFolderName = "!!!Skin Manager";
+    public static string managerFolderName { get; private set; } = "!!!Skin Manager";
+    public static HelperSkin helperSkin { get; private set; }
     private enum ValueNames
     {
         disableCursorTrail,
@@ -62,14 +62,14 @@ public class Form1 : Form
         selectedSkin,
         searchSkinsText,
     };
-    bool debugMode = false;
-    bool spamLogs = false;
+    static bool debugMode = false;
+    public static bool spamLogs { get; protected set; } = false;
     Dictionary<ValueNames, string> loadedValues = new Dictionary<ValueNames, string>();
 
-    public void FormLayout(bool debugMode, bool spamLogs)
+    public void FormLayout(bool debugModeArgs, bool spamLogsArgs)
     {
-        this.debugMode = debugMode;
-        this.spamLogs = spamLogs;
+        debugMode = debugModeArgs;
+        spamLogs = spamLogsArgs;
         this.FormClosing += new FormClosingEventHandler(SaveEditedValues);
         DebugLog("[STARTING UP]", false);
         LoadValues();
@@ -95,7 +95,7 @@ public class Form1 : Form
         else
             osuPath = GetValue(ValueNames.osuPath);
 
-        helperSkin = new Skin(Path.Combine(osuPath, "skins", managerFolderName));
+        helperSkin = new HelperSkin();
 
         this.MaximizeBox = false;
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -119,14 +119,12 @@ public class Form1 : Form
             if (!Directory.Exists(Path.Combine(osuPath, "skins", "Deleted Skins")))
                 osuPathDI.CreateSubdirectory("Deleted Skins");
 
-            try
-            {
-                FindOsuSkins(new Object(), new EventArgs());
-            }
-            catch
+
+            FindOsuSkins(new Object(), new EventArgs());
+            /*catch
             {
                 DebugLog("Error searching skins", true);
-            }
+            } */
         }
         DebugLog("[STARTUP FINISHED. WAITING FOR INPUT]", false);
     }
@@ -211,7 +209,7 @@ public class Form1 : Form
                 }
 
                 osuPath = osuFolderPathBox.Text;
-                helperSkin = new Skin(Path.Combine(osuPath, "skins", managerFolderName));
+                //helperSkin = new Skin(Path.Combine(osuPath, "skins", managerFolderName));
                 OnClick(sender, thisEvent);
                 thisEvent.Handled = true;
             }
@@ -680,7 +678,7 @@ public class Form1 : Form
 
         //if skin that was last selected is shown, select it
         string lastSkinName = GetValue(ValueNames.selectedSkin);
-        if (osuSkinsListBox.Items.Contains(lastSkinName))
+        if (lastSkinName != null && osuSkinsListBox.Items.Contains(lastSkinName))
         {
             osuSkinsListBox.SetSelected(osuSkinsListBox.Items.IndexOf(lastSkinName), true);
             DebugLog("Previous selected skin name: " + lastSkinName, false);
@@ -700,7 +698,7 @@ public class Form1 : Form
             {
                 if (skinFilterSelector.Text != "All" && skin.name.IndexOf(skinFilterSelector.Text) == 0)
                     shouldAdd = true;
-                else if(skinFilterSelector.Text == "All")
+                else if (skinFilterSelector.Text == "All")
                     shouldAdd = true;
             }
         }
@@ -769,74 +767,39 @@ public class Form1 : Form
         }
         EnableAllControls(false);
 
-        DeleteSkinElementsInHelperSkin();
-        string workingSkinPath;
+        helperSkin.DeleteSkinElements();
+        Skin workingSkin;
         if (osuSkinsListBox.SelectedItems.Count == 1) //false if multiple skins are selected
-            workingSkinPath = osuSkinsList[osuSkinsListBox.SelectedIndex].path;
+            workingSkin = osuSkinsList[osuSkinsListBox.SelectedIndex];
         else
         {
             Random r = new Random();
             int randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[r.Next(0, osuSkinsListBox.SelectedItems.Count)]);
-            workingSkinPath = osuSkinsList[randomSkinIndex].path;
+            workingSkin = osuSkinsList[randomSkinIndex];
 
             osuSkinsListBox.ClearSelected();
             osuSkinsListBox.SetSelected(randomSkinIndex, true);
             DebugLog($"Changing to random skin from selected | Selected: {osuSkinsListBox.SelectedItem.ToString()}", false);
         }
-        //ChangeRegValue(ValueNames.selectedSkinName, osuSkinsListBox.SelectedItem.ToString());
 
-        /* if (writeCurrSkinBox.Checked)
-            UpdateSkinTextFile(workingSkinPath.Replace(Path.Combine(osuPath, "skins") + "\\", "")); */
-
-        DirectoryInfo workingSkinPathDi = new DirectoryInfo(workingSkinPath);
-
-        foreach (FileInfo currentFile in workingSkinPathDi.GetFiles())
-        {
-            currentFile.CopyTo(Path.Combine(helperSkin.path, currentFile.Name), true);
-            if (spamLogs)
-                DebugLog($"Copying \"{currentFile.FullName}\" to \"{Path.Combine(helperSkin.path, currentFile.Name)}\"", false);
-        }
-        RecursiveSkinFolderMove(workingSkinPath, "\\");
+        workingSkin.ChangeToSkin();
 
         DebugLog("[FINISHED CHANGING TO SKIN]", false);
 
         if (!disableSkinChangesBox.Checked)
         {
             DebugLog("[STARTING EDITING SKIN]", false);
-            ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
-            ShowSliderEnds(showSliderEndsBox.CheckState);
-            DisableCursorTrail(disableCursorTrailBox.CheckState);
-            ShowComboBursts(showComboBurstsBox.CheckState);
-            ShowHitLighting(showHitLightingBox.CheckState);
-            ShowHitCircles(showHitCirclesBox.CheckState);
-            ChangeExpandingCursor(expandingCursorBox.CheckState);
+            GetCurrentSkin().ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
+            GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
+            GetCurrentSkin().DisableCursorTrail(disableCursorTrailBox.CheckState);
+            GetCurrentSkin().ShowComboBursts(showComboBurstsBox.CheckState);
+            GetCurrentSkin().ShowHitLighting(showHitLightingBox.CheckState);
+            GetCurrentSkin().ShowHitCircles(showHitCirclesBox.CheckState);
+            GetCurrentSkin().ChangeExpandingCursor(expandingCursorBox.CheckState);
             //MakeInstafade(makeInstafadeBox.CheckState);
             DebugLog("[FINISHED EDITING SKIN]", false);
         }
         EnableAllControls(true);
-    }
-
-    private void RecursiveSkinFolderMove(string skinPath, string prevFolder)
-    {
-        DirectoryInfo rootFolder = new DirectoryInfo(skinPath + prevFolder);
-
-        foreach (DirectoryInfo folder in rootFolder.GetDirectories())
-        {
-            Directory.CreateDirectory(helperSkin + prevFolder + "\\" + folder.Name);
-            DirectoryInfo subFolder = new DirectoryInfo(skinPath + prevFolder + "\\" + folder.Name);
-
-            if (subFolder.GetDirectories().Length != 0)
-            {
-                RecursiveSkinFolderMove(skinPath, prevFolder + "\\" + folder.Name);
-            }
-
-            foreach (FileInfo file in subFolder.GetFiles())
-            {
-                file.CopyTo(helperSkin + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
-                if (spamLogs)
-                    DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(helperSkin + prevFolder, folder.Name, file.Name)}\"", false);
-            }
-        }
     }
 
     private void RandomSkin_Click(object sender, EventArgs e)
@@ -849,548 +812,25 @@ public class Form1 : Form
         ChangeToSelectedSkin(sender, e);
     }
 
-    //Skin editing
-    private void ChangeExpandingCursor(CheckState expand)
-    {
-        DebugLog($"ChangeExpandingCursor({expand.ToString()}) called", false);
-
-        if (expand == CheckState.Indeterminate)
-        {
-            RevertSkinIni("CursorExpand:");
-            return;
-        }
-
-        EnableAllControls(false);
-        if (expand == CheckState.Checked)
-            EditSkinIni("CursorExpand:", "CursorExpand: 1", "[General]");
-        else
-            EditSkinIni("CursorExpand:", "CursorExpand: 0", "[General]");
-        EnableAllControls(true);
-    }
-
-    /*     private void MakeInstafade(CheckState instafade)
-        {
-            return;
-            if (instafade == CheckState.Checked)
-            {
-                bool hitCircleOverlayAboveNumber = true;
-                bool At2X;
-                string searchINIForBool = SearchSkinINI("HitCircleOverlayAbove");
-                if (searchINIForBool != null && searchINIForBool.Contains('0'))
-                    hitCircleOverlayAboveNumber = false;
-
-                string hitcircleDefault = SearchSkinINI("HitCirclePrefix:").Replace("HitCirclePrefix:", "").Replace(" ", "").Replace("/", "\\");
-                if (String.IsNullOrWhiteSpace(hitcircleDefault))
-                    hitcircleDefault = "default";
-
-                if ((File.Exists(Path.Combine(helperSkinPath, "hitcircle@2x.png")) || File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png"))) &&
-                File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-1@2x.png")))
-                {
-                    At2X = true;
-                }
-                else if ((File.Exists(Path.Combine(helperSkinPath, "hitcircle.png")) || File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay.png"))) &&
-                File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-1.png")))
-                {
-                    At2X = false;
-                }
-                else
-                {
-                    DebugLog($"Pair of hd and sd not found | Looking for prefix of {hitcircleDefault}", true);
-                    return;
-                }
-
-
-                Image hitcircleImage = (File.Exists(Path.Combine(helperSkinPath, "hitcircle@2x.png")) ? Image.FromFile(Path.Combine(helperSkinPath, "hitcircle@2x.png")) : new Bitmap(1, 1));
-                Image hitcircleOverlayImage = (File.Exists(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png")) ? Image.FromFile(Path.Combine(helperSkinPath, "hitcircleoverlay@2x.png")) : new Bitmap(1, 1));
-                Graphics hitcircleGraphics = Graphics.FromImage(hitcircleImage);
-                int imageWidth = hitcircleImage.Width / 2;
-                int imageHeight = hitcircleImage.Height / 2;
-
-                if (!hitCircleOverlayAboveNumber)
-                {
-                    hitcircleGraphics.DrawImage(hitcircleOverlayImage, 0, 0);
-                    hitcircleGraphics.Save();
-                    //hitcircleImage.Save(Path.Combine(mainSkinPath, "!TEST.png"));
-                }
-
-                float x;
-                float y;
-                for (int i = 0; i <= 9; i++)
-                {
-                    DebugLog(i, true);
-                    Image textImage = (File.Exists(Path.Combine(helperSkinPath, hitcircleDefault + "-" + i + "@2x.png")) ?
-                        Image.FromFile(Path.Combine(helperSkinPath, hitcircleDefault + "-" + i + "@2x.png")) :
-                        Image.FromFile(Path.Combine(helperSkinPath, hitcircleDefault + "-" + i + ".png")));
-
-                    x = imageWidth - (textImage.Width / 2);
-                    y = imageHeight - (textImage.Height / 2);
-                    using (Image hitcircleImageTemp = (Image)hitcircleImage.Clone())
-                    {
-                        Graphics tempGraphic = Graphics.FromImage(hitcircleImageTemp);
-
-                        tempGraphic.DrawImage(textImage, x, y);
-                        if (hitCircleOverlayAboveNumber)
-                            tempGraphic.DrawImage(hitcircleOverlayImage, 0, 0);
-
-                        tempGraphic.Save();
-                        //DebugLog(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+(At2X? "@2x": "")+".png"), true);
-                        textImage.Dispose();
-                        tempGraphic.Dispose();
-                        //File.Delete(Path.Combine(mainSkinPath, hitcircleDefault + "-"+i+(At2X? "@2x": "@2x")+".png"));
-                        string path = Path.Combine(helperSkinPath, hitcircleDefault + "-" + i + (At2X ? "@2x" : "") + ".png");
-                        hitcircleImageTemp.Save(path.Replace(".png", ".temp"));
-                        //Process.Start("cmd.exe", $"/c ffmpeg -i {path.Replace(".png", ".temp")} -vf scale=320:320 -y {path}");
-                        //File.Delete(path.Replace(".png", ".temp"));
-                    }
-                }
-                hitcircleImage.Dispose();
-                hitcircleOverlayImage.Dispose();
-                hitcircleGraphics.Dispose();
-                EditSkinIni("HitCircleOverlap:", "HitCircleOverlap: " + imageWidth * 2, "[Fonts]");
-                ShowHitCircles(CheckState.Unchecked);
-            }
-        } */
-
-    private void ShowHitCircles(CheckState showState)
-    {
-        DebugLog($"ShowHitCircles({showState}) called", false);
-
-        if (showState == CheckState.Indeterminate)
-            showState = CheckState.Checked;
-
-        bool show = (showState == CheckState.Checked);
-
-        EnableAllControls(false);
-        string[] fileNames =
-        {
-            "hitcircle.png",
-            "hitcircle@2x.png",
-            "hitcircleoverlay.png",
-            "hitcircleoverlay@2x.png",
-            "sliderstartcircle.png",
-            "sliderstartcircle@2x.png",
-            "sliderstartcircleoverlay.png",
-            "sliderstartcircleoverlay@2x.png",
-        };
-        if (show)
-        {
-            CopyFilesToHelperSkin(fileNames);
-        }
-        else
-        {
-            Bitmap emptyImage = new Bitmap(1, 1);
-            foreach (string curName in fileNames)
-            {
-                string helperSkinFilePath = Path.Combine(helperSkin.path, curName);
-                emptyImage.Save(helperSkinFilePath);
-                if (spamLogs)
-                    DebugLog($"Copying empty image to {helperSkinFilePath}", false);
-            }
-
-            emptyImage.Dispose();
-        }
-        EnableAllControls(true);
-    }
-
-    private void ShowHitLighting(CheckState showState)
-    {
-        DebugLog($"ShowHitLighting({showState}) called", false);
-
-        EnableAllControls(false);
-        string[] fileNames =
-        {
-            "lighting.png",
-            "lighting@2x.png",
-        };
-
-        if (showState == CheckState.Indeterminate)
-        {
-            CopyFilesToHelperSkin(fileNames);
-        }
-        else if (showState == CheckState.Checked)
-        {
-            string currentSkinFilePath;
-            string helperSkinFilePath;
-            foreach (string curFileName in fileNames)
-            {
-                currentSkinFilePath = Path.Combine(GetCurrentSkin().path, curFileName);
-                helperSkinFilePath = Path.Combine(helperSkin.path, curFileName);
-
-                if (File.Exists(currentSkinFilePath))
-                {
-                    Image thisImg = Image.FromFile(currentSkinFilePath);
-                    if (thisImg.Height > 100)
-                    {
-                        File.Copy(currentSkinFilePath, helperSkinFilePath, true);
-                        thisImg.Dispose();
-                        if (spamLogs)
-                            DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
-
-                        continue;
-                    }
-                    thisImg.Dispose();
-                    File.Delete(helperSkinFilePath);
-                    if (spamLogs)
-                        DebugLog($"Deleting {helperSkinFilePath}", false);
-                }
-                else if (File.Exists(helperSkinFilePath))
-                {
-                    File.Delete(helperSkinFilePath);
-                    if (spamLogs)
-                        DebugLog($"Deleting {helperSkinFilePath}", false);
-                }
-            }
-        }
-        else
-        {
-            Image emptyImage = new Bitmap(1, 1);
-            string helperSkinFilePath;
-            foreach (string name in fileNames)
-            {
-                helperSkinFilePath = Path.Combine(helperSkin.path, name);
-
-                emptyImage.Save(helperSkinFilePath);
-                if (spamLogs)
-                    DebugLog($"Saving empty image to {helperSkinFilePath}", false);
-            }
-            emptyImage.Dispose();
-        }
-        EnableAllControls(true);
-    }
-
-    private void ShowComboBursts(CheckState showState)
-    {
-        DebugLog($"ShowComboBursts({showState}) called", false);
-
-        if (showState == CheckState.Indeterminate)
-            showState = CheckState.Unchecked;
-
-        bool show = (showState == CheckState.Checked);
-
-        EnableAllControls(false);
-        Bitmap emptyImage = new Bitmap(1, 1);
-        string[] fileNames =
-        {
-            "comboburst",
-            "comboburst@2x",
-            "comboburst-fruits",
-            "comboburst-fruits@2x",
-            "comboburst-mania",
-            "comboburst-mania@2x",
-        };
-
-        foreach (string name in fileNames)
-        {
-            if (!File.Exists(Path.Combine(helperSkin.path, name + ".png")))
-            {
-                emptyImage.Save(Path.Combine(helperSkin.path, name + ".png"));
-                if (spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(helperSkin.path, name + ".png")}", false);
-            }
-        }
-
-        //incase there are multiple combobursts
-        DirectoryInfo di = new DirectoryInfo(GetCurrentSkin().path);
-        foreach (FileInfo file in di.GetFiles())
-        {
-            foreach (string name in fileNames)
-                if (file.Name.Contains(name))
-                {
-                    if (show)
-                        File.Copy(file.FullName, Path.Combine(helperSkin.path, file.Name), true);
-                    else
-                        emptyImage.Save(Path.Combine(helperSkin.path, file.Name));
-
-                    if (spamLogs)
-                        DebugLog($"Saving empty image to {Path.Combine(helperSkin.path, file.Name)}", false);
-                }
-        }
-        emptyImage.Dispose();
-        EnableAllControls(true);
-    }
-
-    private void DisableCursorTrail(CheckState showState)
-    {
-        DebugLog($"DisableCursorTrail({showState}) called", false);
-
-        if (showState == CheckState.Indeterminate)
-            return;
-
-        bool show = (showState == CheckState.Checked);
-
-        EnableAllControls(false);
-        List<string> names = new List<string>()
-        {
-            "cursortrail@2x.png",
-            "cursortrail.png",
-        };
-
-        if (show)
-        {
-            foreach (string name in names)
-                if (File.Exists(Path.Combine(GetCurrentSkin().path, name)))
-                {
-                    File.Copy(Path.Combine(GetCurrentSkin().path, name), Path.Combine(helperSkin.path, name), true);
-                    if (spamLogs)
-                        DebugLog($"Copying {Path.Combine(GetCurrentSkin().path, name)} to {Path.Combine(helperSkin.path, name)}", false);
-                }
-
-        }
-        else
-        {
-            Bitmap emptyImage = new Bitmap(1, 1);
-            foreach (string name in names)
-            {
-                emptyImage.Save(Path.Combine(helperSkin.path, name));
-                if (spamLogs)
-                    DebugLog($"Saving empty image to {Path.Combine(helperSkin.path, name)}", false);
-            }
-            emptyImage.Dispose();
-        }
-        EnableAllControls(true);
-    }
-
-    private void ShowSliderEnds(CheckState showState)
-    {
-        DebugLog($"ShowSliderEnds({showState}) called", false);
-
-        if (showState == CheckState.Indeterminate)
-            return;
-
-        bool show = (showState == CheckState.Checked);
-
-        EnableAllControls(false);
-        string[] sliderEnds =
-        {
-            "sliderendcircle.png",
-            "sliderendcircle@2x.png",
-            "sliderendcircleoverlay.png",
-            "sliderendcircleoverlay@2x.png"
-        };
-
-        Bitmap emptyImage = new Bitmap(1, 1);
-        Image sliderImage = new Bitmap(1, 1);
-        string skipAt2X = "";
-
-        if (show)//Showing ends
-        {
-            foreach (string fileName in sliderEnds)
-            {
-                if (skipAt2X == fileName)
-                {
-                    skipAt2X = "";
-                    continue;
-                }
-
-                using (Image image = (File.Exists(Path.Combine(GetCurrentSkin().path, fileName)) ? Image.FromFile(Path.Combine(GetCurrentSkin().path, fileName)) : null))
-                {
-                    if (File.Exists(Path.Combine(GetCurrentSkin().path, fileName)) && (image == null ? true : image.Size.Height < 100))
-                    {
-                        File.Copy(Path.Combine(GetCurrentSkin().path, fileName), Path.Combine(helperSkin.path, fileName), true);
-                        if (spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkin().path, fileName)} to {Path.Combine(helperSkin.path, fileName)}", false);
-                    }
-                    else if (File.Exists(Path.Combine(GetCurrentSkin().path, fileName.Replace("end", "start"))))
-                    {
-                        File.Copy(Path.Combine(GetCurrentSkin().path, fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(helperSkin.path, fileName), true);
-                        if (spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkin().path, fileName.Replace("sliderendcircle", "sliderstartcircle"))} to {Path.Combine(helperSkin.path, fileName)}", false);
-                        if (!File.Exists(Path.Combine(GetCurrentSkin().path, fileName.Replace(".png", "@2x.png"))))
-                        {
-                            skipAt2X = fileName.Replace(".png", "@2x.png");
-                        }
-                    }
-                    else if (File.Exists(Path.Combine(GetCurrentSkin().path, fileName.Replace("sliderend", "hit"))))
-                    {
-                        File.Copy(Path.Combine(GetCurrentSkin().path, fileName.Replace("sliderend", "hit")), Path.Combine(helperSkin.path, fileName), true);
-                        if (spamLogs)
-                            DebugLog($"Copying {Path.Combine(GetCurrentSkin().path, fileName.Replace("sliderend", "hit"))} to {Path.Combine(helperSkin.path, fileName)}", false);
-                    }
-                    /* else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
-                    {
-                        sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
-                        if(sliderImage.Size.Height < 100)
-                        {
-                            sliderImage.Dispose();
-                            File.Delete(Path.Combine(mainSkinPath, fileName));
-                        }
-                        sliderImage.Dispose();
-                    } */
-                }
-            }
-        }
-        else//hiding ends
-        {
-            foreach (string fileName in sliderEnds)
-                emptyImage.Save(Path.Combine(helperSkin.path, fileName));
-        }
-        emptyImage.Dispose();
-        sliderImage.Dispose();
-        EnableAllControls(true);
-    }
-
-    private void DeleteSkinElementsInHelperSkin()
-    {
-        DirectoryInfo rootFolder = new DirectoryInfo(helperSkin.path);
-
-        foreach (FileInfo file in rootFolder.GetFiles())
-        {
-            if (spamLogs)
-                DebugLog($"Deleting {file.FullName}", false);
-            file.Delete();
-        }
-
-
-        foreach (DirectoryInfo folder in rootFolder.GetDirectories())
-        {
-            if (spamLogs)
-                DebugLog($"Deleting {folder.FullName} (directory)", false);
-            Directory.Delete(folder.FullName, true);
-        }
-    }
-
-    private void ShowHitCircleNumbers(CheckState showState)
-    {
-        DebugLog($"ShowHitCircleNumbers({showState}) called", false);
-
-        if (showState == CheckState.Indeterminate)
-            return;
-
-        bool show = (showState == CheckState.Checked);
-
-        EnableAllControls(false);
-        if (show) //show skin numbers
-        {
-            File.Copy(Path.Combine(GetCurrentSkin().path, "skin.ini"), Path.Combine(helperSkin.path, "skin.ini"), true);
-            DebugLog($"Copying {Path.Combine(GetCurrentSkin().path, "skin.ini")} to {Path.Combine(helperSkin.path, "skin.ini")}", false);
-        }
-        else //hide skin numbers
-            EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
-        EnableAllControls(true);
-    }
-
-    private void CopyFilesToHelperSkin(string[] fileNames)
-    {
-        foreach (string curName in fileNames)
-        {
-            string currentSkinFilePath = Path.Combine(GetCurrentSkin().path, curName);
-            string helperSkinFilePath = Path.Combine(helperSkin.path, curName);
-            if (File.Exists(currentSkinFilePath))
-            {
-                File.Copy(currentSkinFilePath, helperSkinFilePath, true);
-                if (spamLogs)
-                    DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
-            }
-        }
-    }
-
-    //Ini things
-    private void EditSkinIni(string searchFor, string replaceWith, string fallBackSearch)
-    {
-        DebugLog($"Attempting to search for {searchFor}, replace it with {replaceWith}, with a fallback of {fallBackSearch}. In the skin.ini", false);
-        File.Copy(helperSkin.iniPath, helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-        StreamReader reader = new StreamReader(helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-        StreamWriter writer = new StreamWriter(helperSkin.iniPath);
-        string currLine;
-        bool lineFound = false;
-
-        while ((currLine = reader.ReadLine()) != null)
-        {
-            if (currLine.Contains(searchFor))
-            {
-                writer.WriteLine(replaceWith);
-                lineFound = true;
-                continue;
-            }
-            writer.WriteLine(currLine);
-        }
-
-        currLine = null;
-        reader.Close();
-        reader.Dispose();
-        writer.Close();
-        writer.Dispose();
-
-        if (!lineFound)
-        {
-            StreamWriter writerNew = new StreamWriter(helperSkin.iniPath);
-            StreamReader readerNew = new StreamReader(helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-
-            while ((currLine = readerNew.ReadLine()) != null)
-            {
-                if (currLine.Contains(fallBackSearch))
-                {
-
-                    writerNew.WriteLine(currLine);
-                    writerNew.WriteLine(replaceWith);
-                    continue;
-                }
-                writerNew.WriteLine(currLine);
-            }
-            writerNew.Close();
-            writerNew.Dispose();
-            readerNew.Close();
-            readerNew.Dispose();
-        }
-
-        File.Delete(helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-    }
-
-    private void RevertSkinIni(string searchFor)
-    {
-        DebugLog($"Attempting to restore {searchFor}. In the skin.ini", false);
-        StreamReader origINIReader = new StreamReader(GetCurrentSkin().iniPath);
-        string currLine;
-
-        while ((currLine = origINIReader.ReadLine()) != null)
-        {
-            if (currLine.ToLower().Contains(searchFor.ToLower()))
-                break;
-        }
-
-        origINIReader.Close();
-        origINIReader.Dispose();
-
-        if (currLine == null)
-            EditSkinIni(searchFor, "", "really long word that should not be there");
-        else
-            EditSkinIni(searchFor, currLine, "really long word that should not be there");
-    }
-
-    private string SearchSkinINI(string searchFor)
-    {
-        DebugLog($"Searching skin.ini for {searchFor}", false);
-        StreamReader reader = new StreamReader(helperSkin.iniPath);
-        string currLine = null;
-        while ((currLine = reader.ReadLine()) != null)
-        {
-            if (currLine.Contains(searchFor))
-                break;
-        }
-        reader.Close();
-        reader.Dispose();
-        return currLine;
-    }
-
     //Edit Saving Stuff
     private void OnClick(object sender, EventArgs e)
     {
         if (osuSkinsListBox.SelectedIndex == -1)
             return;
         else if (sender == showSkinNumbersBox)
-            ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
+            GetCurrentSkin().ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
         else if (sender == showSliderEndsBox)
-            ShowSliderEnds(showSliderEndsBox.CheckState);
+            GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
         else if (sender == disableCursorTrailBox)
-            DisableCursorTrail(disableCursorTrailBox.CheckState);
+            GetCurrentSkin().DisableCursorTrail(disableCursorTrailBox.CheckState);
         else if (sender == showComboBurstsBox)
-            ShowComboBursts(showComboBurstsBox.CheckState);
+            GetCurrentSkin().ShowComboBursts(showComboBurstsBox.CheckState);
         else if (sender == showHitLightingBox)
-            ShowHitLighting(showHitLightingBox.CheckState);
+            GetCurrentSkin().ShowHitLighting(showHitLightingBox.CheckState);
         else if (sender == showHitCirclesBox)
-            ShowHitCircles(showHitCirclesBox.CheckState);
+            GetCurrentSkin().ShowHitCircles(showHitCirclesBox.CheckState);
         else if (sender == expandingCursorBox)
-            ChangeExpandingCursor(expandingCursorBox.CheckState);
+            GetCurrentSkin().ChangeExpandingCursor(expandingCursorBox.CheckState);
         else if (sender == disableSkinChangesBox) { }
         /*         else if (sender == makeInstafadeBox)
                     MakeInstafade(makeInstafadeBox.CheckState); */
@@ -1573,31 +1013,26 @@ public class Form1 : Form
         return null;
     }
 
-    private void DebugLog(string log, bool alwaysLog)
+    public static void DebugLog(string log, bool alwaysLog)
     {
         if (alwaysLog || debugMode)
             Console.WriteLine(log);
     }
 
-    private void DebugLog(int log, bool alwaysLog)
+    public static void DebugLog(int log, bool alwaysLog)
     {
         if (alwaysLog || debugMode)
             Console.WriteLine(log);
     }
 
-    private void DebugLog(bool log, bool alwaysLog)
+    public static void DebugLog(bool log, bool alwaysLog)
     {
         if (alwaysLog || debugMode)
             Console.WriteLine(log);
     }
 
-    private void DebugLog()
+    public static void DebugLog()
     {
         Console.WriteLine("Test debug");
-    }
-
-    private void UpdateSkinTextFile(string skinName)
-    {
-        File.WriteAllText(Path.Combine(osuPath, "skins", "currentSkin.txt"), skinName);
     }
 }

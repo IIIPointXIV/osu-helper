@@ -1,8 +1,7 @@
 using System.Linq;
 using System.Collections.Generic;
-using System.Windows.Forms;
 
-public class PinnedFiles : Form
+public class PinnedFiles
 {
     public enum fileGroups
     {

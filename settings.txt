@@ -1,9 +1,10 @@
-skinFilters,!,#,+,$,=,@
+skinFilters,!,#,+,$,=,@,*,&
 disableSkinChanges,Unchecked
-showComboBursts,Indeterminate
-showHitLighting,Indeterminate
-showSkinNumbers,Indeterminate
-disableCursorTrail,Indeterminate
-showSliderEnds,Indeterminate
-showHitCircles,Indeterminate
+showComboBursts,Unchecked
+showHitLighting,Unchecked
+showSkinNumbers,Checked
+disableCursorTrail,Checked
+showSliderEnds,Unchecked
+showHitCircles,Checked
 expandingCursor,Unchecked
+selectedSkin,#osu! Default Skin Improved
