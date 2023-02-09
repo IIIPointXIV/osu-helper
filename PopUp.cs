@@ -2,8 +2,18 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
+/// <summary>
+/// Class providing ways to interact with the user.
+/// </summary>
 public static class PopUp
 {
+    /// <summary>
+    /// Pops up input box asking user to give a value.
+    /// </summary>
+    /// <param name="title">The title of the window.</param>
+    /// <param name="promptText">The text used to prompt the user for action.</param>
+    /// <param name="value">The value that will populate the input box as default and passed as reference.</param>
+    /// <returns><paramref name="DialogResult"/> containing what the user clicked</returns>
     public static DialogResult InputBox(string title, string promptText, ref string value)
     {
         Form form = new Form();
@@ -46,6 +56,11 @@ public static class PopUp
         return dialogResult;
     }
 
+    /// <summary>
+    /// Pops up confirmation that the user wants to do <paramref name="text"/>.
+    /// </summary>
+    /// <param name="text">Text asking for confirmation that the user wants to do something.</param>
+    /// <returns>bool signifying that the user wants to do the action.</returns>
     public static bool Conformation(string text)
     {
         Form form = new Form();

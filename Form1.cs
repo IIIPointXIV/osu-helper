@@ -130,7 +130,8 @@ public class Form1 : Form
         DebugLog("[STARTUP FINISHED. WAITING FOR INPUT]", false);
     }
 
-    //Setup Things
+    #region Setup Controls
+
     private void SetupToolTip()
     {
         toolTip = new ToolTip();
@@ -560,6 +561,8 @@ public class Form1 : Form
         }
     }
 
+    #endregion
+
     /// <summary>
     /// Called when the user types in <paramref name="searchSkinBox"/>.
     /// </summary>
@@ -877,6 +880,8 @@ public class Form1 : Form
         }
     }
 
+    #region Handle saved and loaded values
+    
     /// <param name="valName">The name you want the value of</param>
     /// <returns>The value of the ValueName with the same name.</returns>
     private string GetValue(ValueNames valName)
@@ -1014,6 +1019,8 @@ public class Form1 : Form
 
         writer.Dispose();
     }
+
+    #endregion
 
     /// <summary>
     /// Renames the selected skin
