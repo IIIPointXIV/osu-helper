@@ -83,7 +83,7 @@ public class Form1 : Form
             FileName = "",
             Title = "Select osu! directory"
         };
-        if (IsSavedValueEmpty(ValueNames.osuPath)) //If the path is not set in the reg, try to get default directory. If it is not there throw an error
+        if (IsSavedValueEmpty(ValueNames.osuPath)) //If the path is not set, try to get default directory. If it is not there throw an error
         {
             osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!");
             if (!File.Exists(Path.Combine(osuPath, "osu!.exe")))
@@ -95,14 +95,15 @@ public class Form1 : Form
         else
             osuPath = GetValue(ValueNames.osuPath);
 
-        helperSkin = new HelperSkin();
+        helperSkin = HelperSkin.Instance;
 
         this.MaximizeBox = false;
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.Name = "Skin Manager";
         this.Text = "Skin Manager";
         this.Size = new Size(800, 800);
-        this.Icon = new Icon("./Images/o_h_kDs_icon.ico");
+        this.Icon = new Icon(Path.Combine(".", "Images", "o_h_kDs_icon.ico"));
+
 
         SetupOtherControls();
         SetupButtons();
@@ -559,7 +560,9 @@ public class Form1 : Form
         }
     }
 
-    //MISC Skin handling
+    /// <summary>
+    /// Called when the user types in <paramref name="searchSkinBox"/>.
+    /// </summary>
     private void UserSearchSkins_Click(object sender, EventArgs e)
     {
         FindOsuSkins(sender, e);
@@ -593,6 +596,9 @@ public class Form1 : Form
         osuSkinsListBox.EndUpdate(); */
     }
 
+    /// <summary>
+    /// Pops up box asking user to change the osu! path
+    /// </summary>
     private void ChangeOsuPathButton_Click(object sender, EventArgs e)
     {
         FolderBrowserDialog directorySelector = new FolderBrowserDialog()
@@ -606,7 +612,7 @@ public class Form1 : Form
         DialogResult givenPath = directorySelector.ShowDialog();
         if (givenPath == DialogResult.OK)
         {
-            if (!File.Exists(directorySelector.SelectedPath + "\\osu!.exe"))
+            if (!File.Exists(directorySelector.SelectedPath + Path.DirectorySeparatorChar + "osu!.exe"))
             {
                 MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 directorySelector.Dispose();
@@ -621,6 +627,9 @@ public class Form1 : Form
         directorySelector.Dispose();
     }
 
+    /// <summary>
+    /// Searches the skin directory and adds skins to <paramref name="osuSkinsList"/> and <paramref name="osuSkinsListBox"/>.
+    /// </summary>
     private void FindOsuSkins(object sender, EventArgs e)
     {
         if (sender != searchSkinBox)
@@ -688,6 +697,13 @@ public class Form1 : Form
             EnableAllControls(true);
     }
 
+    /// <summary>
+    /// Adds <paramref name="skin"/> to <paramref name="osuSkinsList"/> and <paramref name="osuSkinsListBox"/>.
+    /// </summary>
+    /// <remarks>
+    /// Checks against the filters, the search box, and the hidden filters.
+    /// </remarks>
+    /// <param name="skin">The skin to be added</param>
     private void AddSkin(UserSkin skin)
     {
         bool shouldAdd = false;
@@ -712,6 +728,9 @@ public class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Adds <paramref name="skinFilterSelector.Text"/> to available skin filters, if it is not already in there.
+    /// </summary>
     private void AddToSkinFilters()
     {
         if (skinFilterSelector.Text == ",")
@@ -721,10 +740,15 @@ public class Form1 : Form
         else if (skinFilterSelector.Text != "All" && !skinFilterSelector.Items.Contains(skinFilterSelector.Text))
         {
             skinFilterSelector.Items.Add(skinFilterSelector.Text);
-            //ChangeRegValue(ValueNames.skinFilters, (String.IsNullOrWhiteSpace(GetValue(ValueNames.skinFilters)) ? "" : GetValue(ValueNames.skinFilters) + ",") + skinFilterSelector.Text);
         }
     }
 
+    /// <summary>
+    /// Opens the skin folder of the selected skin.
+    /// </summary>
+    /// <remarks>
+    /// If no skin is selected, throws error.
+    /// </remarks>
     private void OpenSkinFolder_Click(object sender, EventArgs e)
     {
         if (osuSkinsListBox.SelectedItem == null)
@@ -733,9 +757,14 @@ public class Form1 : Form
             return;
         }
         DebugLog("Attempting open skin folder: " + Path.Combine(osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()), false);
-        Process.Start("explorer.exe", Path.Combine(osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()));
+
+        if (OperatingSystem.IsWindows())
+            Process.Start("explorer.exe", Path.Combine(osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()));
     }
 
+    /// <summary>
+    /// Deletes the selected skin.
+    /// </summary>
     private void DeleteSelectedSkin_Click(object sender, EventArgs e)
     {
         //PopUp confirm = new PopUp();
@@ -756,7 +785,9 @@ public class Form1 : Form
         EnableAllControls(true);
     }
 
-    //Skin Switching
+    /// <summary>
+    /// Changes to the selected skin
+    /// </summary>
     private void ChangeToSelectedSkin(object sender, EventArgs e)
     {
         DebugLog("[STARTING TO CHANGE SKIN]", false);
@@ -802,6 +833,9 @@ public class Form1 : Form
         EnableAllControls(true);
     }
 
+    /// <summary>
+    /// Selects a random skin of all the available skins.
+    /// </summary>
     private void RandomSkin_Click(object sender, EventArgs e)
     {
         EnableAllControls(false);
@@ -812,7 +846,9 @@ public class Form1 : Form
         ChangeToSelectedSkin(sender, e);
     }
 
-    //Edit Saving Stuff
+    /// <summary>
+    /// Handles click events of all of the checkboxes, buttons, etc.
+    /// </summary>
     private void OnClick(object sender, EventArgs e)
     {
         if (osuSkinsListBox.SelectedIndex == -1)
@@ -839,10 +875,10 @@ public class Form1 : Form
             DebugLog("Error with OnClick | " + sender.ToString(), true);
             return;
         }
-
-        //ChangeRegValue(valName, val);
     }
 
+    /// <param name="valName">The name you want the value of</param>
+    /// <returns>The value of the ValueName with the same name.</returns>
     private string GetValue(ValueNames valName)
     {
         if (!IsSavedValueEmpty(valName))
@@ -860,11 +896,18 @@ public class Form1 : Form
         } */
     }
 
+    /// <param name="valName">The name you want the value of</param>
+    /// <returns>The value of the ValueName with the same name.</returns>
     private string GetValue(string valName)
     {
         return GetValue((ValueNames)Enum.Parse(typeof(ValueNames), valName, true));
     }
 
+    /// <summary>
+    /// Returns true if the saved value is non-existent or empty.
+    /// </summary>
+    /// <param name="valName">The name of the value you are checking.</param>
+    /// <returns>bool if the values is non-existent or empty.</returns>
     private bool IsSavedValueEmpty(ValueNames valName)
     {
         if (!loadedValues.Keys.Contains(valName))
@@ -873,6 +916,8 @@ public class Form1 : Form
         return String.IsNullOrWhiteSpace(loadedValues[valName]);
     }
 
+    /// <param name="name">The name of the checkbox you want the state of.</param>
+    /// <returns>The CheckState of <paramref name="name"/>.</returns>
     private CheckState GetCheckState(ValueNames name)
     {
         if (!IsSavedValueEmpty(name))
@@ -882,6 +927,9 @@ public class Form1 : Form
 
     }
 
+    /// <summary>
+    /// Loads the values from "settings.txt" into <paramref name="loadedValues"/>.
+    /// </summary>
     private void LoadValues()
     {
         if (!File.Exists("settings.txt"))
@@ -908,7 +956,10 @@ public class Form1 : Form
         DebugLog("[Finished loading values from settings.txt]", false);
     }
 
-    public void SaveEditedValues(object sender, EventArgs e)
+    /// <summary>
+    /// Saves the values of checkboxes, filters, ect. to settings.txt
+    /// </summary>
+    private void SaveEditedValues(object sender, EventArgs e)
     {
         //save the values of things
         if (!File.Exists("settings.txt"))
@@ -964,7 +1015,9 @@ public class Form1 : Form
         writer.Dispose();
     }
 
-    //MISC
+    /// <summary>
+    /// Renames the selected skin
+    /// </summary>
     private void RenameSkin_Click(object sender, EventArgs e)
     {
         if (osuSkinsListBox.SelectedItems.Count != 1)
@@ -975,8 +1028,8 @@ public class Form1 : Form
         if (PopUp.InputBox("Rename", "Rename:", ref renameTo) == DialogResult.Cancel)
             return;
 
-        while (renameTo.Contains('\\'))
-            if (PopUp.InputBox("Cannot contain \"\\\"", "Rename:", ref renameTo) == DialogResult.Cancel)
+        while (renameTo.Contains(Path.DirectorySeparatorChar))
+            if (PopUp.InputBox("Cannot contain \"" + Path.DirectorySeparatorChar + "\"", "Rename:", ref renameTo) == DialogResult.Cancel)
                 return;
 
 
@@ -991,6 +1044,10 @@ public class Form1 : Form
         osuSkinsListBox.SetSelected(osuSkinsList.IndexOf(new UserSkin(renameTo)), true);
     }
 
+    /// <summary>
+    /// Enables or disables all controls.
+    /// </summary>
+    /// <param name="enable">If true, controls are enabled.</param>
     private void EnableAllControls(bool enable)
     {
         DebugLog($"EnableAllControls({enable}) called", false);
@@ -1001,6 +1058,13 @@ public class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Gets the current skin that is being used.
+    /// </summary>
+    /// <remarks>
+    /// If no skin is selected and no name is saved, throws an error.
+    /// </remarks>
+    /// <returns>The UserSkin object of the skin that is being used.</returns>
     private UserSkin GetCurrentSkin()
     {
         if (osuSkinsListBox.SelectedItems.Count == 1)
@@ -1013,26 +1077,24 @@ public class Form1 : Form
         return null;
     }
 
-    public static void DebugLog(string log, bool alwaysLog)
+    #region Debug Stuff
+    /// <summary>
+    /// Writes <paramref name="log"/>.toString() to the console if <paramref name="alwaysLog"/> is true or if debug more is on.
+    /// </summary>
+    /// <param name="log">What will be written to the console.</param>
+    /// <param name="alwaysLog">If true, will always log the message regardless of <paramref name="debugMode"/></param>
+    public static void DebugLog(object log, bool alwaysLog)
     {
         if (alwaysLog || debugMode)
-            Console.WriteLine(log);
+            Console.WriteLine(log.ToString());
     }
 
-    public static void DebugLog(int log, bool alwaysLog)
-    {
-        if (alwaysLog || debugMode)
-            Console.WriteLine(log);
-    }
-
-    public static void DebugLog(bool log, bool alwaysLog)
-    {
-        if (alwaysLog || debugMode)
-            Console.WriteLine(log);
-    }
-
+    /// <summary>
+    /// Writes "Test debug" to the console. 
+    /// </summary>
     public static void DebugLog()
     {
         Console.WriteLine("Test debug");
     }
+    #endregion
 }

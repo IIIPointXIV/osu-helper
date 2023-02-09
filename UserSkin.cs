@@ -556,19 +556,19 @@ public class UserSkin : Skin
 
         foreach (DirectoryInfo folder in rootFolder.GetDirectories())
         {
-            Directory.CreateDirectory(Form1.helperSkin.path + prevFolder + "\\" + folder.Name);
-            DirectoryInfo subFolder = new DirectoryInfo(path + prevFolder + "\\" + folder.Name);
+            Directory.CreateDirectory(Form1.helperSkin.path + prevFolder + Path.DirectorySeparatorChar + folder.Name);
+            DirectoryInfo subFolder = new DirectoryInfo(path + prevFolder + Path.DirectorySeparatorChar + folder.Name);
 
 
             foreach (FileInfo file in subFolder.GetFiles())
             {
-                file.CopyTo(Form1.helperSkin.path + prevFolder + "\\" + folder.Name + "\\" + file.Name, true);
+                file.CopyTo(Form1.helperSkin.path + prevFolder + Path.DirectorySeparatorChar + folder.Name + Path.DirectorySeparatorChar + file.Name, true);
                 if (Form1.spamLogs)
                     Form1.DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(Form1.helperSkin.path + prevFolder, folder.Name, file.Name)}\"", false);
             }
 
             if (subFolder.GetDirectories().Length != 0)
-                RecursiveSkinFolderMove(prevFolder + "\\" + folder.Name);
+                RecursiveSkinFolderMove(prevFolder + Path.DirectorySeparatorChar + folder.Name);
         }
     }
 

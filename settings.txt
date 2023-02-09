@@ -7,4 +7,4 @@ disableCursorTrail,Unchecked
 showSliderEnds,Unchecked
 showHitCircles,Unchecked
 expandingCursor,Unchecked
-selectedSkin,#Ai Hayasaka v3.0
+selectedSkin,#The Empress [BRS]
