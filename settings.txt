@@ -2,9 +2,9 @@ skinFilters,!,#,+,$,=,@,*,&
 disableSkinChanges,Unchecked
 showComboBursts,Unchecked
 showHitLighting,Unchecked
-showSkinNumbers,Checked
-disableCursorTrail,Checked
+showSkinNumbers,Unchecked
+disableCursorTrail,Unchecked
 showSliderEnds,Unchecked
-showHitCircles,Checked
+showHitCircles,Unchecked
 expandingCursor,Unchecked
-selectedSkin,#osu! Default Skin Improved
+selectedSkin,#Ai Hayasaka v3.0

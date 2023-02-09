@@ -38,7 +38,7 @@ public class Form1 : Form
     private Font mainFont;
     private Font searchBoxFont;
     private ListBox osuSkinsListBox;
-    private List<Skin> osuSkinsList = new List<Skin>();
+    private List<UserSkin> osuSkinsList = new List<UserSkin>();
     public static string osuPath { get; private set; }
     public static string managerFolderName { get; private set; } = "!!!Skin Manager";
     public static HelperSkin helperSkin { get; private set; }
@@ -670,7 +670,7 @@ public class Form1 : Form
 
         foreach (DirectoryInfo workingSkin in osuSkins)
         {
-            AddSkin(new Skin(workingSkin.FullName));
+            AddSkin(new UserSkin(workingSkin.FullName));
         }
         osuSkinsListBox.EndUpdate();
         if (!Controls.Contains(osuSkinsListBox))
@@ -688,7 +688,7 @@ public class Form1 : Form
             EnableAllControls(true);
     }
 
-    private void AddSkin(Skin skin)
+    private void AddSkin(UserSkin skin)
     {
         bool shouldAdd = false;
 
@@ -768,7 +768,7 @@ public class Form1 : Form
         EnableAllControls(false);
 
         helperSkin.DeleteSkinElements();
-        Skin workingSkin;
+        UserSkin workingSkin;
         if (osuSkinsListBox.SelectedItems.Count == 1) //false if multiple skins are selected
             workingSkin = osuSkinsList[osuSkinsListBox.SelectedIndex];
         else
@@ -791,7 +791,7 @@ public class Form1 : Form
             DebugLog("[STARTING EDITING SKIN]", false);
             GetCurrentSkin().ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
             GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
-            GetCurrentSkin().DisableCursorTrail(disableCursorTrailBox.CheckState);
+            GetCurrentSkin().ShowCursorTrail(disableCursorTrailBox.CheckState);
             GetCurrentSkin().ShowComboBursts(showComboBurstsBox.CheckState);
             GetCurrentSkin().ShowHitLighting(showHitLightingBox.CheckState);
             GetCurrentSkin().ShowHitCircles(showHitCirclesBox.CheckState);
@@ -822,7 +822,7 @@ public class Form1 : Form
         else if (sender == showSliderEndsBox)
             GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
         else if (sender == disableCursorTrailBox)
-            GetCurrentSkin().DisableCursorTrail(disableCursorTrailBox.CheckState);
+            GetCurrentSkin().ShowCursorTrail(disableCursorTrailBox.CheckState);
         else if (sender == showComboBurstsBox)
             GetCurrentSkin().ShowComboBursts(showComboBurstsBox.CheckState);
         else if (sender == showHitLightingBox)
@@ -988,7 +988,7 @@ public class Form1 : Form
 
         osuSkinsListBox.ClearSelected();
 
-        osuSkinsListBox.SetSelected(osuSkinsList.IndexOf(new Skin(renameTo)), true);
+        osuSkinsListBox.SetSelected(osuSkinsList.IndexOf(new UserSkin(renameTo)), true);
     }
 
     private void EnableAllControls(bool enable)
@@ -1001,14 +1001,14 @@ public class Form1 : Form
         }
     }
 
-    private Skin GetCurrentSkin()
+    private UserSkin GetCurrentSkin()
     {
         if (osuSkinsListBox.SelectedItems.Count == 1)
             return osuSkinsList[osuSkinsListBox.SelectedIndex];
         else if (String.IsNullOrWhiteSpace(GetValue(ValueNames.selectedSkin)) || osuSkinsListBox.SelectedItems.Count > 1)
             DebugLog("Multiple/no skins selected. Unable to get skin path.", true);
         else
-            return new Skin(GetValue(ValueNames.selectedSkin), false);
+            return new UserSkin(GetValue(ValueNames.selectedSkin), false);
 
         return null;
     }
