@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using static System.Windows.Forms.Control;
 
 /// <summary>
 /// Made of the skin folder that the user would use. Has the ability to alter itself.
@@ -21,7 +22,49 @@ public class UserSkin : Skin
     }
 
     #endregion
-    
+
+    /// <summary>
+    /// Calls all skin edit functions on skin.
+    /// </summary>
+    /// <param name="controls">Controls of main window</param>
+    public void EditSkin(ControlCollection controls)
+    {
+        foreach (Control obj in controls)
+        {
+            if (obj is CheckBox && Form1.ValueNameContains(obj.Name))
+            {
+                CheckState state = ((CheckBox)obj).CheckState;
+                switch (Form1.ParseValueName(obj.Name))
+                {
+                    case Form1.ValueName.disableCursorTrail:
+                        ShowCursorTrail(state);
+                        break;
+                    case Form1.ValueName.expandingCursor:
+                        ChangeExpandingCursor(state);
+                        break;
+                    case Form1.ValueName.showComboBursts:
+                        ShowComboBursts(state);
+                        break;
+                    case Form1.ValueName.showHitCircles:
+                        ShowHitCircles(state);
+                        break;
+                    case Form1.ValueName.showHitLighting:
+                        ShowHitLighting(state);
+                        break;
+                    case Form1.ValueName.showHitCircleNumbers:
+                        ShowHitCircleNumbers(state);
+                        break;
+                    case Form1.ValueName.showSliderEnds:
+                        ShowSliderEnds(state);
+                        break;
+                    default:
+                        Form1.DebugLog("Error editing skin. Passed value was: " + Form1.ParseValueName(obj.Name), true);
+                        break;
+                }
+            }
+        }
+    }
+
     #region Edit INI things
 
     /// <summary>
@@ -36,7 +79,7 @@ public class UserSkin : Skin
     {
         Form1.DebugLog($"Attempting to restore {searchFor}. In the skin.ini", false);
         StreamReader origINIReader = new StreamReader(iniPath);
-        string currLine;
+        string? currLine;
 
         while ((currLine = origINIReader.ReadLine()) != null)
         {
@@ -71,7 +114,7 @@ public class UserSkin : Skin
         File.Copy(Form1.helperSkin.iniPath, Form1.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
         StreamReader reader = new StreamReader(Form1.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
         StreamWriter writer = new StreamWriter(Form1.helperSkin.iniPath);
-        string currLine;
+        string? currLine;
         bool lineFound = false;
 
         while ((currLine = reader.ReadLine()) != null)
@@ -172,7 +215,7 @@ public class UserSkin : Skin
                     continue;
                 }
 
-                using (Image image = (File.Exists(Path.Combine(path, fileName)) ? Image.FromFile(Path.Combine(path, fileName)) : null))
+                using (Image? image = (File.Exists(Path.Combine(path, fileName)) ? Image.FromFile(Path.Combine(path, fileName)) : null))
                 {
                     if (File.Exists(Path.Combine(path, fileName)) && (image == null ? true : image.Size.Height < 100))
                     {

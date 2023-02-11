@@ -1,10 +1,10 @@
-skinFilters,!,#,+,$,=,@,*,&
+skinFilters,!,#,$,=,@,&,+
 disableSkinChanges,Unchecked
 showComboBursts,Unchecked
 showHitLighting,Unchecked
-showSkinNumbers,Unchecked
-disableCursorTrail,Unchecked
+showHitCircleNumbers,Indeterminate
+disableCursorTrail,Checked
 showSliderEnds,Unchecked
-showHitCircles,Unchecked
+showHitCircles,Checked
 expandingCursor,Unchecked
-selectedSkin,#The Empress [BRS]
+selectedSkin,#fierymod_v8_realest_ver_two
