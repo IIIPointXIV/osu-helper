@@ -99,11 +99,17 @@ namespace osu_helper
             this.Size = new Size(800, 800);
             this.Icon = new Icon(Path.Combine(".", "Images", "o_h_kDs_icon.ico"));
 
-
-            SetupOtherControls();
-            SetupButtons();
-            SetupCheckBoxes();
+            List<Control> topRow = new List<Control>();
+            List<Control> searchRow = new List<Control>();
+            List<Control> bottomRow = new List<Control>();
+            SetupTopRowControls(ref topRow);
+            AddControls(topRow, 3);
+            SetupSearchRowControls(ref searchRow);
+            AddControls(searchRow, 33);
+            SetupBottomRowControls(ref bottomRow);
+            AddControls(bottomRow, 737);
             SetupSkinChangeCheckBoxes();
+
             SetupToolTip();
 
             DirectoryInfo osuPathDI = new DirectoryInfo(Path.Combine(OsuHelper.osuPath, "skins"));
@@ -151,29 +157,71 @@ namespace osu_helper
             //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
         }
 
-        private void SetupOtherControls()
+        private void AddControls(List<Control> controls, int fromTop)
         {
-            searchSkinBox = new TextBox()
+            int leftOffset = 1;
+            foreach (Control obj in controls)
             {
-                Left = 218,
+                if (!(obj is ComboBox) && !(obj is TextBox))
+                    obj.Width = TextRenderer.MeasureText(obj.Text, mainFont).Width + 10;
+                else
+                    DebugLog();
+
+                obj.Top = fromTop;
+                obj.Left = leftOffset;
+                leftOffset += obj.Width + 3;
+                Controls.Add(obj);
+            }
+        }
+
+        private void SetupTopRowControls(ref List<Control> controls)
+        {
+            /* writeCurrSkinBox = new CheckBox()
+            {
+                Height = 25,
                 Width = 100,
-                Top = 32,
-                Font = searchBoxFont,
-                Name = ValueName.searchSkinsText.ToString(),
-                PlaceholderText = "Search for skin",
+                Left = 483,
+                Top = 3,
+                Text = "Write current skin to .txt file",
+                Name = ValueNames.writeCurrSkin.ToString(),
+                TextAlign = ContentAlignment.MiddleLeft,
             };
-            searchSkinBox.KeyUp += UserSearchSkins;
-            searchSkinBox.TextChanged += (sender, e) =>
+            if (!IsSavedValueEmpty(ValueNames.writeCurrSkin))
+                writeCurrSkinBox.CheckState = GetCheckState(ValueNames.writeCurrSkin);
+            else
+                writeCurrSkinBox.Checked = false;
+
+            writeCurrSkinBox.CheckedChanged += new EventHandler(OnClick);
+            Controls.Add(writeCurrSkinBox); */
+
+            changeOsuPathButton = new System.Windows.Forms.Button()
             {
-                int textWidth = TextRenderer.MeasureText(searchSkinBox.Text, searchBoxFont).Width;
-                if (textWidth > 95)
-                    searchSkinBox.Width = textWidth + 5;
-                else if (textWidth < searchSkinBox.Width - 5)
-                    searchSkinBox.Width = (textWidth < 95 ? 100 : textWidth + 5);
+                Left = 0,
+                Top = 3,
+                Width = 84,
+                Font = mainFont,
+                Text = "Change osu! Path",
+                Name = "changeOsuPathButton",
             };
-            Controls.Add(searchSkinBox);
-            if (!IsSavedValueEmpty(ValueName.searchSkinsText))
-                searchSkinBox.Text = GetValue(ValueName.searchSkinsText);
+            changeOsuPathButton.Click += new EventHandler(OnButtonClick);
+            changeOsuPathButton.Select();
+
+            disableSkinChangesBox = new CheckBox()
+            {
+                Height = 25,
+                Width = 200,
+                Left = 483,
+                Top = 3,
+                Text = "Disable skin changes",
+                Name = ValueName.disableSkinChanges.ToString(),
+                TextAlign = ContentAlignment.MiddleLeft,
+            };
+            if (!IsSavedValueEmpty(ValueName.disableSkinChanges))
+                disableSkinChangesBox.CheckState = GetCheckState(ValueName.disableSkinChanges);
+            else
+                disableSkinChangesBox.Checked = false;
+
+            disableSkinChangesBox.CheckedChanged += new EventHandler(OnCheckBoxClick);
 
             osuSkinsListBox = new ListBox()
             {
@@ -211,6 +259,102 @@ namespace osu_helper
                     thisEvent.Handled = true;
                 }
             }; */
+        
+            controls.Add(changeOsuPathButton);
+            controls.Add(disableSkinChangesBox);
+        }
+
+        private void SetupSearchRowControls(ref List<Control> controls)
+        {
+            searchSkinBox = new TextBox()
+            {
+                Left = 218,
+                Width = 100,
+                Top = 32,
+                Font = searchBoxFont,
+                Name = ValueName.searchSkinsText.ToString(),
+                PlaceholderText = "Search for skin",
+            };
+            searchSkinBox.KeyUp += UserSearchSkins;
+            searchSkinBox.TextChanged += (sender, e) =>
+            {
+                int textWidth = TextRenderer.MeasureText(searchSkinBox.Text, searchBoxFont).Width;
+                if (textWidth > 95)
+                    searchSkinBox.Width = textWidth + 5;
+                else if (textWidth < searchSkinBox.Width - 5)
+                    searchSkinBox.Width = (textWidth < 95 ? 100 : textWidth + 5);
+            };
+            if (!IsSavedValueEmpty(ValueName.searchSkinsText))
+                searchSkinBox.Text = GetValue(ValueName.searchSkinsText);
+
+            hiddenSkinFiltersText = new CheckBox()
+            {
+                Top = 33,
+                Font = mainFont,
+                Left = 136,
+                Text = "a",
+                Name = ValueName.hiddenSkinFilter.ToString(),
+                TextAlign = ContentAlignment.MiddleLeft,
+            };
+
+            deleteSkinSelectorButton = new System.Windows.Forms.Button()
+            {
+                Top = 33,
+                Font = mainFont,
+                Width = 61,
+                Left = 156,
+                Text = "Delete",
+                Name = "deleteSkinSelectorButton",
+            };
+
+            /* hiddenSkinFiltersText.TextChanged += new EventHandler((sender, ev) =>
+            {
+                int textWidth = TextRenderer.MeasureText(hiddenSkinFiltersText.Text, mainFont).Width;
+                if (textWidth == 0)
+                {
+                    if (Controls.Contains(hiddenSkinFiltersText))
+                        Controls.Remove(hiddenSkinFiltersText);
+                    //deleteSkinSelectorButton.Left = 153;
+                    //searchSkinBox.Left = 218;
+                }
+                else
+                {
+                    if (!Controls.Contains(hiddenSkinFiltersText))
+                        Controls.Add(hiddenSkinFiltersText);
+
+                    //deleteSkinSelectorButton.Left = textWidth + 152;
+                    hiddenSkinFiltersText.Width = textWidth + 30;
+                    //searchSkinBox.Left = textWidth + 218;
+                }
+            }); */
+
+            if (!IsSavedValueEmpty(ValueName.hiddenSkinFilter))
+                hiddenSkinFiltersText.Text = hiddenSkinFiltersText.Text = GetValue(ValueName.hiddenSkinFilter).Replace(",", ", ");
+            else
+                hiddenSkinFiltersText.Text = "";
+
+            deleteSkinSelectorButton.Click += new EventHandler((sender, e) =>
+            {
+                if (skinFilterSelector.Items.Contains(skinFilterSelector.Text))
+                {
+                    string[] origValue = GetValue(ValueName.skinFilters).Split(',');
+                    string fixedValue = "";
+
+                    foreach (string name in origValue)
+                    {
+                        if (skinFilterSelector.Text != name)
+                            fixedValue += name + ",";
+                    }
+                    //ChangeRegValue(ValueNames.skinFilters, fixedValue.Remove(fixedValue.Length-1));
+
+                    skinFilterSelector.Items.Remove(skinFilterSelector.Text);
+                }
+                else if (skinFilterSelector.Text == "All")
+                    DebugLog("You can't delete the \"All\" prefix silly.", true);
+
+                skinFilterSelector.Text = "All";
+                //ChangeRegValue(ValueNames.selectedSkinFilter, "All");
+            });
 
             skinFilterSelector = new ComboBox()
             {
@@ -246,20 +390,6 @@ namespace osu_helper
                 skinFilterSelector.Text = GetValue(ValueName.selectedSkinFilter);
             else
                 skinFilterSelector.Text = "All";
-            Controls.Add(skinFilterSelector);
-        }
-
-        private void SetupButtons()
-        {
-            deleteSkinSelectorButton = new System.Windows.Forms.Button()
-            {
-                Top = 33,
-                Font = mainFont,
-                Width = 61,
-                Left = 156,
-                Text = "Delete",
-                Name = "deleteSkinSelectorButton",
-            };
 
             showFilteredSkinsButton = new System.Windows.Forms.Button()
             {
@@ -272,7 +402,6 @@ namespace osu_helper
                 Name = "showFilteredSkinsButton",
             };
             showFilteredSkinsButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(showFilteredSkinsButton);
 
             hideSelectedSkinFilterButton = new System.Windows.Forms.Button()
             {
@@ -284,20 +413,6 @@ namespace osu_helper
                 Name = "hideSelectedSkinFilterButton",
             };
             hideSelectedSkinFilterButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(hideSelectedSkinFilterButton);
-
-            changeOsuPathButton = new System.Windows.Forms.Button()
-            {
-                Left = 0,
-                Top = 3,
-                Width = 84,
-                Font = mainFont,
-                Text = "osu! Path",
-                Name = "changeOsuPathButton",
-            };
-            changeOsuPathButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(changeOsuPathButton);
-            changeOsuPathButton.Select();
 
             /* searchOsuSkinsButton = new System.Windows.Forms.Button()
             {
@@ -310,6 +425,15 @@ namespace osu_helper
             searchOsuSkinsButton.Click += new EventHandler(OnButtonClick);
             Controls.Add(searchOsuSkinsButton); */
 
+            controls.Add(searchSkinBox);
+            controls.Add(showFilteredSkinsButton);
+            controls.Add(hideSelectedSkinFilterButton);
+            controls.Add(deleteSkinSelectorButton);
+            controls.Add(skinFilterSelector);
+        }
+
+        private void SetupBottomRowControls(ref List<Control> controls)
+        {
             useSkinButton = new System.Windows.Forms.Button()
             {
                 Left = 102,
@@ -320,7 +444,6 @@ namespace osu_helper
                 Name = "useSkinButton",
             };
             useSkinButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(useSkinButton);
 
             randomSkinButton = new System.Windows.Forms.Button()
             {
@@ -332,7 +455,6 @@ namespace osu_helper
                 Name = "randomSkinButton",
             };
             randomSkinButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(randomSkinButton);
 
             deleteSkinButton = new System.Windows.Forms.Button()
             {
@@ -344,7 +466,6 @@ namespace osu_helper
                 Name = "deleteSkinButton",
             };
             deleteSkinButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(deleteSkinButton);
 
             openSkinFolderButton = new System.Windows.Forms.Button()
             {
@@ -356,7 +477,6 @@ namespace osu_helper
                 Name = "openSkinFolderButton",
             };
             openSkinFolderButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(openSkinFolderButton);
 
             renameSkinButton = new System.Windows.Forms.Button()
             {
@@ -368,105 +488,12 @@ namespace osu_helper
                 Name = "renameSkinButton",
             };
             renameSkinButton.Click += new EventHandler(OnButtonClick);
-            Controls.Add(renameSkinButton);
-        }
-
-        private void SetupCheckBoxes()
-        {
-            hiddenSkinFiltersText = new CheckBox()
-            {
-                Top = 33,
-                Font = mainFont,
-                Left = 136,
-                Text = "a",
-                Name = ValueName.hiddenSkinFilter.ToString(),
-                TextAlign = ContentAlignment.MiddleLeft,
-            };
-            hiddenSkinFiltersText.TextChanged += new EventHandler((sender, ev) =>
-            {
-                int textWidth = TextRenderer.MeasureText(hiddenSkinFiltersText.Text, mainFont).Width;
-                if (textWidth == 0)
-                {
-                    if (Controls.Contains(hiddenSkinFiltersText))
-                        Controls.Remove(hiddenSkinFiltersText);
-                    deleteSkinSelectorButton!.Left = 153;
-                    searchSkinBox.Left = 218;
-                }
-                else
-                {
-                    if (!Controls.Contains(hiddenSkinFiltersText))
-                        Controls.Add(hiddenSkinFiltersText);
-
-                    deleteSkinSelectorButton.Left = textWidth + 152;
-                    hiddenSkinFiltersText.Width = textWidth + 30;
-                    searchSkinBox.Left = textWidth + 218;
-                }
-            });
-            Controls.Add(deleteSkinSelectorButton);
-
-            if (!IsSavedValueEmpty(ValueName.hiddenSkinFilter))
-                hiddenSkinFiltersText.Text = hiddenSkinFiltersText.Text = GetValue(ValueName.hiddenSkinFilter).Replace(",", ", ");
-            else
-                hiddenSkinFiltersText.Text = "";
-
-            deleteSkinSelectorButton!.Click += new EventHandler((sender, e) =>
-            {
-                if (skinFilterSelector.Items.Contains(skinFilterSelector.Text))
-                {
-                    string[] origValue = GetValue(ValueName.skinFilters).Split(',');
-                    string fixedValue = "";
-
-                    foreach (string name in origValue)
-                    {
-                        if (skinFilterSelector.Text != name)
-                            fixedValue += name + ",";
-                    }
-                    //ChangeRegValue(ValueNames.skinFilters, fixedValue.Remove(fixedValue.Length-1));
-
-                    skinFilterSelector.Items.Remove(skinFilterSelector.Text);
-                }
-                else if (skinFilterSelector.Text == "All")
-                    DebugLog("You can't delete the \"All\" prefix silly.", true);
-
-                skinFilterSelector.Text = "All";
-                //ChangeRegValue(ValueNames.selectedSkinFilter, "All");
-            });
-
-            /* writeCurrSkinBox = new CheckBox()
-            {
-                Height = 25,
-                Width = 100,
-                Left = 483,
-                Top = 3,
-                Text = "Write current skin to .txt file",
-                Name = ValueNames.writeCurrSkin.ToString(),
-                TextAlign = ContentAlignment.MiddleLeft,
-            };
-            if (!IsSavedValueEmpty(ValueNames.writeCurrSkin))
-                writeCurrSkinBox.CheckState = GetCheckState(ValueNames.writeCurrSkin);
-            else
-                writeCurrSkinBox.Checked = false;
-
-            writeCurrSkinBox.CheckedChanged += new EventHandler(OnClick);
-            Controls.Add(writeCurrSkinBox); */
-
-            disableSkinChangesBox = new CheckBox()
-            {
-                Height = 25,
-                Width = 200,
-                Left = 483,
-                Top = 3,
-                Text = "Disable skin changes",
-                Name = ValueName.disableSkinChanges.ToString(),
-                TextAlign = ContentAlignment.MiddleLeft,
-            };
-            if (!IsSavedValueEmpty(ValueName.disableSkinChanges))
-                disableSkinChangesBox.CheckState = GetCheckState(ValueName.disableSkinChanges);
-            else
-                disableSkinChangesBox.Checked = false;
-
-            disableSkinChangesBox.CheckedChanged += new EventHandler(OnCheckBoxClick);
-            Controls.Add(disableSkinChangesBox);
+            
+            controls.Add(useSkinButton);
+            controls.Add(randomSkinButton);
+            controls.Add(renameSkinButton);
+            controls.Add(openSkinFolderButton);
+            controls.Add(deleteSkinButton);
         }
 
         private void SetupSkinChangeCheckBoxes()

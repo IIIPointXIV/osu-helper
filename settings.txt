@@ -1,5 +1,5 @@
-skinFilters,!,#,$,=,@,&,+
 disableSkinChanges,Unchecked
+skinFilters,!,#,$,=,@,&,+
 showComboBursts,Unchecked
 showHitLighting,Unchecked
 showHitCircleNumbers,Indeterminate
