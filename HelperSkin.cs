@@ -1,59 +1,62 @@
 using System;
 using System.IO;
 
-/// <summary>
-/// Class used to store the Helper skin information
-/// </summary>
-/// <remarks>
-/// Should only have one object made.
-/// </remarks>
-public sealed class HelperSkin : Skin
+namespace osu_helper
 {
-    private static HelperSkin instance;
-
-    public static HelperSkin Instance
-    {
-        get
-        {
-            if (instance == null)
-                instance = new HelperSkin();
-            return instance;
-        }
-    }
-
-    private HelperSkin() : base(getPath()) { }
-
     /// <summary>
-    /// Gets the path of the helper skin.
+    /// Class used to store the Helper skin information
     /// </summary>
-    /// <returns>The path of the helper skin.</returns>
-    private static string getPath()
+    /// <remarks>
+    /// Should only have one object made.
+    /// </remarks>
+    public sealed class HelperSkin : Skin
     {
-        if (Form1.managerFolderName == null)
-            throw new ArgumentNullException("managerFolderName is null.");
+        private static HelperSkin instance;
 
-        return Skin.getPathFromName(Form1.managerFolderName);
-    }
-
-    /// <summary>
-    /// Deletes all files in the helper skin
-    /// </summary>
-    public void DeleteSkinElements()
-    {
-        DirectoryInfo rootFolder = new DirectoryInfo(path);
-
-        foreach (FileInfo file in rootFolder.GetFiles())
+        public static HelperSkin Instance
         {
-            if (Form1.spamLogs)
-                Form1.DebugLog($"Deleting {file.FullName}", false);
-            file.Delete();
+            get
+            {
+                if (instance == null)
+                    instance = new HelperSkin();
+                return instance;
+            }
         }
 
-        foreach (DirectoryInfo folder in rootFolder.GetDirectories())
+        private HelperSkin() : base(getPath()) { }
+
+        /// <summary>
+        /// Gets the path of the helper skin.
+        /// </summary>
+        /// <returns>The path of the helper skin.</returns>
+        private static string getPath()
         {
-            if (Form1.spamLogs)
-                Form1.DebugLog($"Deleting {folder.FullName} (directory)", false);
-            Directory.Delete(folder.FullName, true);
+            if (OsuHelper.managerFolderName == null)
+                throw new ArgumentNullException("managerFolderName is null.");
+
+            return Skin.getPathFromName(OsuHelper.managerFolderName);
+        }
+
+        /// <summary>
+        /// Deletes all files in the helper skin
+        /// </summary>
+        public void DeleteSkinElements()
+        {
+            DirectoryInfo rootFolder = new DirectoryInfo(path);
+
+            foreach (FileInfo file in rootFolder.GetFiles())
+            {
+                if (OsuHelper.spamLogs)
+                    MainForm.DebugLog($"Deleting {file.FullName}", false);
+                file.Delete();
+            }
+
+            foreach (DirectoryInfo folder in rootFolder.GetDirectories())
+            {
+                if (OsuHelper.spamLogs)
+                    MainForm.DebugLog($"Deleting {folder.FullName} (directory)", false);
+                Directory.Delete(folder.FullName, true);
+            }
         }
     }
 }
