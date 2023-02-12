@@ -7,4 +7,4 @@ disableCursorTrail,Checked
 showSliderEnds,Unchecked
 showHitCircles,Checked
 expandingCursor,Unchecked
-selectedSkin,#fierymod_v8_realest_ver_two
+selectedSkin,#Epic Steve

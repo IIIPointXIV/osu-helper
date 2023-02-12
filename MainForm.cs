@@ -62,10 +62,8 @@ namespace osu_helper
         /// </summary>
         /// <param name="debugModeArgs">Should it be run in debug mode?</param>
         /// <param name="spamLogsArgs">Should it log everything it does?</param>
-        public void SetupForm(/* bool debugModeArgs, bool spamLogsArgs */)
+        public void SetupForm()
         {
-            /* debugMode = debugModeArgs;
-            spamLogs = spamLogsArgs; */
             this.FormClosing += new FormClosingEventHandler(SaveEditedValues);
             DebugLog("[STARTING UP]", false);
             LoadValues();

@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using static System.Windows.Forms.Control;
+
 namespace osu_helper
 {
     /// <summary>
@@ -59,7 +60,7 @@ namespace osu_helper
                             ShowSliderEnds(state);
                             break;
                         default:
-                            MainForm.DebugLog("Error editing skin. Passed value was: " + MainForm.ParseValueName(obj.Name), true);
+                            MainForm.DebugLog("Error editing skin. Passed value was: " + obj.Name, true);
                             break;
                     }
                 }
