@@ -1,4 +1,5 @@
 disableSkinChanges,Unchecked
+searchSkinsText,khz
 skinFilters,!,#,$,=,@,&,+
 showComboBursts,Unchecked
 showHitLighting,Unchecked
@@ -7,4 +8,4 @@ disableCursorTrail,Checked
 showSliderEnds,Unchecked
 showHitCircles,Checked
 expandingCursor,Unchecked
-selectedSkin,#Epic Steve
+selectedSkin,#Touhou+『khz』+v1.2
