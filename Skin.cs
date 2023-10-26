@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 
 namespace osu_helper
@@ -11,15 +12,34 @@ namespace osu_helper
         /// <summary>
         /// The name of the skin.
         /// </summary>
-        public string name { get; private set; }
+        public string Name { get; private set; }
         /// <summary>
         /// The path used to get to the skin.
         /// </summary>
-        public string path { get; private set; }
+        public string Path { get; private set; }
+        public static readonly Bitmap EmptyImage = new(1, 1);
         /// <summary>
         /// The path to the ini file of the skin.
         /// </summary>
-        public string iniPath { get; private set; }
+        public string INIPath
+        {
+            get
+            {
+                return System.IO.Path.Combine(Path, "skin.ini");
+            }
+            private set { }
+        }
+        /// <summary>
+        /// The path that a temp copy of the INIPath is copied to
+        /// </summary>
+        public string TempINIPath
+        {
+            get
+            {
+                return INIPath.Replace("skin.ini", "skin.ini.temp");
+            }
+            private set { }
+        }
 
         #region Constructors
 
@@ -32,15 +52,19 @@ namespace osu_helper
         {
             if (isPath)
             {
-                this.path = nameOrPath;
-                this.name = getNameFromPath(nameOrPath);
+                Path = nameOrPath;
+                Name = GetNameFromPath(nameOrPath);
             }
             else
             {
-                this.path = getPathFromName(nameOrPath);
-                this.name = nameOrPath;
+                Path = GetPathFromName(nameOrPath);
+                Name = nameOrPath;
             }
-            this.iniPath = getINIPath(nameOrPath);
+        }
+
+        ~Skin()
+        {
+            EmptyImage.Dispose();
         }
 
         #endregion
@@ -52,12 +76,12 @@ namespace osu_helper
         /// </summary>
         /// <param name="path">The path that the skin has</param>
         /// <returns>The name of the associated skin.</returns>
-        public static string getNameFromPath(string path)
+        public static string GetNameFromPath(string path)
         {
-            if (OsuHelper.osuPath == null)
-                throw new ArgumentNullException("osu path is null. Perhaps it was not instantiated?");
+            if (OsuHelper.OsuFolderPath == null)
+                throw new ArgumentNullException("osuPath is null. Perhaps it was not instantiated?");
 
-            return path.Replace(Path.Combine(OsuHelper.osuPath, "skins") + Path.DirectorySeparatorChar, "");
+            return path.Replace(System.IO.Path.Combine(OsuHelper.OsuFolderPath, "skins") + System.IO.Path.DirectorySeparatorChar, "");
         }
 
         /// <summary>
@@ -65,21 +89,23 @@ namespace osu_helper
         /// </summary>
         /// <param name="name">The name of the skin.</param>
         /// <returns>The path of the skin.</returns>
-        public static string getPathFromName(string name) => Path.Combine(OsuHelper.osuPath, "skins", name);
+        public static string GetPathFromName(string name) => System.IO.Path.Combine(OsuHelper.OsuFolderPath, "skins", name);
 
-        /// <summary>
-        /// Gets the path of the ini of the skin.
-        /// </summary>
-        /// <param name="path">The path of the skin.</param>
-        /// <returns>The path of the ini.</returns>
-        private string getINIPath(string path) => Path.Combine(path, "skin.ini");
+        /// <param name="fileName">The name of the file</param>
+        /// <returns>The path of <paramref name="fileName"/></returns>
+        public string GetPathOfFile(string fileName) => System.IO.Path.Combine(Path, fileName);
+
+        public bool FileOfNameExists(string fileName) => File.Exists(GetPathOfFile(fileName));
 
         #endregion
 
-        public override bool Equals(object obj) => obj is Skin skin && path == skin.path;
+        public static string GetSkinFolderPathFromName(string name) => System.IO.Path.Combine(OsuHelper.OsuSkinsFolderPath, name);
+        
+        public override bool Equals(object obj) => obj is Skin skin && Path == skin.Path;
 
-        public override int GetHashCode() => HashCode.Combine(name, path);
+        public override int GetHashCode() => HashCode.Combine(Name, Path);
 
-        public override string ToString() => path;
+        public override string ToString() => Path;
     }
 }
+

@@ -33,9 +33,9 @@ namespace osu_helper
         {
             foreach (Control obj in controls)
             {
-                if (obj is CheckBox && MainForm.ValueNameContains(obj.Name))
+                if (obj is CheckBox box && MainForm.ValueNameContains(obj.Name))
                 {
-                    CheckState state = ((CheckBox)obj).CheckState;
+                    CheckState state = box.CheckState;
                     switch (MainForm.ParseValueName(obj.Name))
                     {
                         case MainForm.ValueName.disableCursorTrail:
@@ -80,7 +80,7 @@ namespace osu_helper
         private void RevertSkinIni(string searchFor)
         {
             MainForm.DebugLog($"Attempting to restore {searchFor}. In the skin.ini", false);
-            StreamReader origINIReader = new StreamReader(iniPath);
+            using StreamReader origINIReader = new(INIPath);
             string? currLine;
 
             while ((currLine = origINIReader.ReadLine()) != null)
@@ -88,8 +88,6 @@ namespace osu_helper
                 if (currLine.ToLower().Contains(searchFor.ToLower()))
                     break;
             }
-
-            origINIReader.Dispose();
 
             if (currLine == null)
                 EditSkinIni(searchFor, "", "really long word that should not be there");
@@ -113,12 +111,13 @@ namespace osu_helper
             /* if(File.Exists(Form1.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp")))
                 File.Delete(Form1.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp")); */
 
-            File.Copy(MainForm.helperSkin.iniPath, MainForm.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-            StreamReader reader = new StreamReader(MainForm.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
-            StreamWriter writer = new StreamWriter(MainForm.helperSkin.iniPath);
+            File.Copy(MainForm.HelperSkin.INIPath, MainForm.HelperSkin.TempINIPath);
+            using StreamReader reader = new(MainForm.HelperSkin.TempINIPath);
+            using StreamWriter writer = new(MainForm.HelperSkin.INIPath);
             string? currLine;
             bool lineFound = false;
 
+            //Loop through the ini looking for searchFor
             while ((currLine = reader.ReadLine()) != null)
             {
                 if (currLine.Contains(searchFor))
@@ -131,30 +130,26 @@ namespace osu_helper
             }
 
             currLine = null;
-            reader.Dispose();
-            writer.Dispose();
 
             if (!lineFound)
             {
-                StreamWriter writerNew = new StreamWriter(MainForm.helperSkin.iniPath);
-                StreamReader readerNew = new StreamReader(MainForm.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
+                using StreamWriter writerNew = new(MainForm.HelperSkin.INIPath);
+                using StreamReader readerNew = new(MainForm.HelperSkin.TempINIPath);
 
+                //Loop through ini looking for fallBackSearch
                 while ((currLine = readerNew.ReadLine()) != null)
                 {
                     if (currLine.Contains(fallBackSearch))
                     {
-
                         writerNew.WriteLine(currLine);
                         writerNew.WriteLine(replaceWith);
                         continue;
                     }
                     writerNew.WriteLine(currLine);
                 }
-                writerNew.Dispose();
-                readerNew.Dispose();
             }
 
-            File.Delete(MainForm.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp"));
+            File.Delete(MainForm.HelperSkin.TempINIPath);
         }
 
         /* private string SearchSkinINI(string searchFor)
@@ -192,24 +187,20 @@ namespace osu_helper
             if (showState == CheckState.Indeterminate)
                 return;
 
-            bool show = (showState == CheckState.Checked);
-
-
-            string[] sliderEnds =
+            string[] sliderEndFileNames =
             {
-            "sliderendcircle.png",
-            "sliderendcircle@2x.png",
-            "sliderendcircleoverlay.png",
-            "sliderendcircleoverlay@2x.png"
-        };
+                "sliderendcircle.png",
+                "sliderendcircle@2x.png",
+                "sliderendcircleoverlay.png",
+                "sliderendcircleoverlay@2x.png"
+            };
 
-            Bitmap emptyImage = new Bitmap(1, 1);
-            Image sliderImage = new Bitmap(1, 1);
+            using Image sliderImage = new Bitmap(1, 1);
             string skipAt2X = "";
 
-            if (show)//Showing ends
+            if (showState == CheckState.Checked) //Showing ends
             {
-                foreach (string fileName in sliderEnds)
+                foreach (string fileName in sliderEndFileNames)
                 {
                     if (skipAt2X == fileName)
                     {
@@ -217,51 +208,49 @@ namespace osu_helper
                         continue;
                     }
 
-                    using (Image? image = (File.Exists(Path.Combine(path, fileName)) ? Image.FromFile(Path.Combine(path, fileName)) : null))
+                    using Image? image = FileOfNameExists(fileName) ? Image.FromFile(GetPathOfFile(fileName)) : null;
+
+                    if (FileOfNameExists(fileName) && (image == null || image.Size.Height < 100))
                     {
-                        if (File.Exists(Path.Combine(path, fileName)) && (image == null ? true : image.Size.Height < 100))
-                        {
-                            File.Copy(Path.Combine(path, fileName), Path.Combine(MainForm.helperSkin.path, fileName), true);
-                            if (OsuHelper.spamLogs)
-                                MainForm.DebugLog($"Copying {Path.Combine(path, fileName)} to {Path.Combine(MainForm.helperSkin.path, fileName)}", false);
-                        }
-                        else if (File.Exists(Path.Combine(path, fileName.Replace("end", "start"))))
-                        {
-                            File.Copy(Path.Combine(path, fileName.Replace("sliderendcircle", "sliderstartcircle")), Path.Combine(MainForm.helperSkin.path, fileName), true);
-                            if (OsuHelper.spamLogs)
-                                MainForm.DebugLog($"Copying {Path.Combine(path, fileName.Replace("sliderendcircle", "sliderstartcircle"))} to {Path.Combine(MainForm.helperSkin.path, fileName)}", false);
-                            if (!File.Exists(Path.Combine(path, fileName.Replace(".png", "@2x.png"))))
-                            {
-                                skipAt2X = fileName.Replace(".png", "@2x.png");
-                            }
-                        }
-                        else if (File.Exists(Path.Combine(path, fileName.Replace("sliderend", "hit"))))
-                        {
-                            File.Copy(Path.Combine(path, fileName.Replace("sliderend", "hit")), Path.Combine(MainForm.helperSkin.path, fileName), true);
-                            if (OsuHelper.spamLogs)
-                                MainForm.DebugLog($"Copying {Path.Combine(path, fileName.Replace("sliderend", "hit"))} to {Path.Combine(MainForm.helperSkin.path, fileName)}", false);
-                        }
-                        /* else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
-                        {
-                            sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
-                            if(sliderImage.Size.Height < 100)
-                            {
-                                sliderImage.Dispose();
-                                File.Delete(Path.Combine(mainSkinPath, fileName));
-                            }
-                            sliderImage.Dispose();
-                        } */
+                        File.Copy(GetPathOfFile(fileName), MainForm.HelperSkin.GetPathOfFile(fileName), true);
+
+                        if (OsuHelper.SpamLogs)
+                            MainForm.DebugLog($"Copying {GetPathOfFile(fileName)} to {MainForm.HelperSkin.GetPathOfFile(fileName)}", false);
                     }
+                    else if (FileOfNameExists(fileName.Replace("end", "start")))
+                    {
+                        File.Copy(GetPathOfFile(fileName.Replace("sliderendcircle", "sliderstartcircle")), MainForm.HelperSkin.GetPathOfFile(fileName), true);
+
+                        if (OsuHelper.SpamLogs)
+                            MainForm.DebugLog($"Copying {GetPathOfFile(fileName.Replace("sliderendcircle", "sliderstartcircle"))} to {MainForm.HelperSkin.GetPathOfFile(fileName)}", false);
+
+                        if (!File.Exists(GetPathOfFile(fileName.Replace(".png", "@2x.png"))))
+                            skipAt2X = fileName.Replace(".png", "@2x.png");
+                    }
+                    else if (FileOfNameExists(fileName.Replace("sliderend", "hit")))
+                    {
+                        File.Copy(GetPathOfFile(fileName.Replace("sliderend", "hit")), MainForm.HelperSkin.GetPathOfFile(fileName), true);
+
+                        if (OsuHelper.SpamLogs)
+                            MainForm.DebugLog($"Copying {GetPathOfFile(fileName.Replace("sliderend", "hit"))} to {MainForm.HelperSkin.GetPathOfFile(fileName)}", false);
+                    }
+                    /* else if(File.Exists(Path.Combine(mainSkinPath, fileName)))
+                    {
+                        sliderImage = Image.FromFile(Path.Combine(mainSkinPath, fileName));
+                        if(sliderImage.Size.Height < 100)
+                        {
+                            sliderImage.Dispose();
+                            File.Delete(Path.Combine(mainSkinPath, fileName));
+                        }
+                        sliderImage.Dispose();
+                    } */
                 }
             }
             else//hiding ends
             {
-                foreach (string fileName in sliderEnds)
-                    emptyImage.Save(Path.Combine(MainForm.helperSkin.path, fileName));
+                foreach (string fileName in sliderEndFileNames)
+                    EmptyImage.Save(MainForm.HelperSkin.GetPathOfFile(fileName));
             }
-            emptyImage.Dispose();
-            sliderImage.Dispose();
-
         }
 
         /// <summary>
@@ -280,36 +269,28 @@ namespace osu_helper
             if (showState == CheckState.Indeterminate)
                 showState = CheckState.Checked;
 
-            bool show = (showState == CheckState.Checked);
-
-
             string[] fileNames =
             {
-            "hitcircle.png",
-            "hitcircle@2x.png",
-            "hitcircleoverlay.png",
-            "hitcircleoverlay@2x.png",
-            "sliderstartcircle.png",
-            "sliderstartcircle@2x.png",
-            "sliderstartcircleoverlay.png",
-            "sliderstartcircleoverlay@2x.png",
-        };
-            if (show)
-            {
+                "hitcircle.png",
+                "hitcircle@2x.png",
+                "hitcircleoverlay.png",
+                "hitcircleoverlay@2x.png",
+                "sliderstartcircle.png",
+                "sliderstartcircle@2x.png",
+                "sliderstartcircleoverlay.png",
+                "sliderstartcircleoverlay@2x.png",
+            };
+
+            if (showState == CheckState.Checked)
                 CopyFilesToHelperSkin(fileNames);
-            }
             else
             {
-                Bitmap emptyImage = new Bitmap(1, 1);
-                foreach (string curName in fileNames)
+                foreach (string curFileName in fileNames)
                 {
-                    string helperSkinFilePath = Path.Combine(MainForm.helperSkin.path, curName);
-                    emptyImage.Save(helperSkinFilePath);
-                    if (OsuHelper.spamLogs)
-                        MainForm.DebugLog($"Copying empty image to {helperSkinFilePath}", false);
+                    EmptyImage.Save(MainForm.HelperSkin.GetPathOfFile(curFileName));
+                    if (OsuHelper.SpamLogs)
+                        MainForm.DebugLog($"Copying empty image to {MainForm.HelperSkin.GetPathOfFile(curFileName)}", false);
                 }
-
-                emptyImage.Dispose();
             }
 
         }
@@ -330,13 +311,10 @@ namespace osu_helper
             if (showState == CheckState.Indeterminate)
                 return;
 
-            bool show = (showState == CheckState.Checked);
-
-
-            if (show) //show skin numbers
+            if (showState == CheckState.Checked) //show skin numbers
             {
-                File.Copy(Path.Combine(path, "skin.ini"), Path.Combine(MainForm.helperSkin.path, "skin.ini"), true);
-                MainForm.DebugLog($"Copying {Path.Combine(path, "skin.ini")} to {Path.Combine(MainForm.helperSkin.path, "skin.ini")}", false);
+                File.Copy(INIPath, MainForm.HelperSkin.INIPath, true);
+                MainForm.DebugLog($"Copying {INIPath} to {MainForm.HelperSkin.INIPath}", false);
             }
             else //hide skin numbers
                 EditSkinIni("HitCirclePrefix:", "HitCirclePrefix: 727", "[Fonts]");
@@ -350,12 +328,12 @@ namespace osu_helper
         /// <summary>
         /// Changes if the cursor expands or not
         /// </summary>
-        /// <param name="showState">Checked: Cursor does expand
-        /// Unchecked: Cursor does not expand
+        /// <param name="expand">Checked: Cursor does expand /
+        /// Unchecked: Cursor does not expand /
         /// Indeterminate: Reverts skin ini to original</param>
         public void ChangeExpandingCursor(CheckState expand)
         {
-            MainForm.DebugLog($"ChangeExpandingCursor({expand.ToString()}) called", false);
+            MainForm.DebugLog($"ChangeExpandingCursor({expand}) called", false);
 
             if (expand == CheckState.Indeterminate)
             {
@@ -385,36 +363,32 @@ namespace osu_helper
             if (showState == CheckState.Indeterminate)
                 return;
 
-            bool show = (showState == CheckState.Checked);
-
-
-            List<string> names = new List<string>()
-        {
-            "cursortrail@2x.png",
-            "cursortrail.png",
-        };
-
-            if (show)
+            List<string> cursorFileNames = new()
             {
-                foreach (string name in names)
-                    if (File.Exists(Path.Combine(path, name)))
-                    {
-                        File.Copy(Path.Combine(path, name), Path.Combine(MainForm.helperSkin.path, name), true);
-                        if (OsuHelper.spamLogs)
-                            MainForm.DebugLog($"Copying {Path.Combine(path, name)} to {Path.Combine(MainForm.helperSkin.path, name)}", false);
-                    }
+                "cursortrail@2x.png",
+                "cursortrail.png",
+            };
 
+            if (showState == CheckState.Checked)
+            {
+                foreach (string fileName in cursorFileNames)
+                    if (FileOfNameExists(fileName))
+                    {
+                        File.Copy(GetPathOfFile(fileName), MainForm.HelperSkin.GetPathOfFile(fileName), true);
+
+                        if (OsuHelper.SpamLogs)
+                            MainForm.DebugLog($"Copying {GetPathOfFile(fileName)} to {MainForm.HelperSkin.GetPathOfFile(fileName)}", false);
+                    }
             }
             else
             {
-                Bitmap emptyImage = new Bitmap(1, 1);
-                foreach (string name in names)
+                foreach (string name in cursorFileNames)
                 {
-                    emptyImage.Save(Path.Combine(MainForm.helperSkin.path, name));
-                    if (OsuHelper.spamLogs)
-                        MainForm.DebugLog($"Saving empty image to {Path.Combine(MainForm.helperSkin.path, name)}", false);
+                    EmptyImage.Save(MainForm.HelperSkin.GetPathOfFile(name));
+
+                    if (OsuHelper.SpamLogs)
+                        MainForm.DebugLog($"Saving empty image to {MainForm.HelperSkin.GetPathOfFile(name)}", false);
                 }
-                emptyImage.Dispose();
             }
 
         }
@@ -426,71 +400,68 @@ namespace osu_helper
         /// <summary>
         /// Shows or hides hit-lighting
         /// </summary>
-        /// <param name="showState">Checked: Shows hit lighting
-        /// Unchecked: Hides hit lighting
+        /// <param name="showState">Checked: Shows hit lighting /
+        /// Unchecked: Hides hit lighting /
         /// Indeterminate: Reverts skin hit lighting to original</param>
         public void ShowHitLighting(CheckState showState)
         {
             MainForm.DebugLog($"ShowHitLighting({showState}) called", false);
 
-
             string[] fileNames =
             {
-            "lighting.png",
-            "lighting@2x.png",
-        };
+                "lighting.png",
+                "lighting@2x.png",
+            };
 
             if (showState == CheckState.Indeterminate)
-            {
                 CopyFilesToHelperSkin(fileNames);
-            }
             else if (showState == CheckState.Checked)
             {
                 string currentSkinFilePath;
                 string helperSkinFilePath;
                 foreach (string curFileName in fileNames)
                 {
-                    currentSkinFilePath = Path.Combine(path, curFileName);
-                    helperSkinFilePath = Path.Combine(MainForm.helperSkin.path, curFileName);
+                    currentSkinFilePath = GetPathOfFile(curFileName);
+                    helperSkinFilePath = MainForm.HelperSkin.GetPathOfFile(curFileName);
 
                     if (File.Exists(currentSkinFilePath))
                     {
-                        Image thisImg = Image.FromFile(currentSkinFilePath);
+                        using Image thisImg = Image.FromFile(currentSkinFilePath);
                         if (thisImg.Height > 100)
                         {
                             File.Copy(currentSkinFilePath, helperSkinFilePath, true);
-                            thisImg.Dispose();
-                            if (OsuHelper.spamLogs)
+
+                            if (OsuHelper.SpamLogs)
                                 MainForm.DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
 
                             continue;
                         }
-                        thisImg.Dispose();
                         File.Delete(helperSkinFilePath);
-                        if (OsuHelper.spamLogs)
+
+                        if (OsuHelper.SpamLogs)
                             MainForm.DebugLog($"Deleting {helperSkinFilePath}", false);
                     }
                     else if (File.Exists(helperSkinFilePath))
                     {
                         File.Delete(helperSkinFilePath);
-                        if (OsuHelper.spamLogs)
+
+                        if (OsuHelper.SpamLogs)
                             MainForm.DebugLog($"Deleting {helperSkinFilePath}", false);
                     }
                 }
             }
             else
             {
-                Image emptyImage = new Bitmap(1, 1);
                 string helperSkinFilePath;
                 foreach (string name in fileNames)
                 {
-                    helperSkinFilePath = Path.Combine(MainForm.helperSkin.path, name);
+                    helperSkinFilePath = MainForm.HelperSkin.GetPathOfFile(name);
 
-                    emptyImage.Save(helperSkinFilePath);
-                    if (OsuHelper.spamLogs)
+                    EmptyImage.Save(helperSkinFilePath);
+
+                    if (OsuHelper.SpamLogs)
                         MainForm.DebugLog($"Saving empty image to {helperSkinFilePath}", false);
                 }
-                emptyImage.Dispose();
             }
 
         }
@@ -508,48 +479,42 @@ namespace osu_helper
             if (showState == CheckState.Indeterminate)
                 showState = CheckState.Unchecked;
 
-            bool show = (showState == CheckState.Checked);
-
-
-            Bitmap emptyImage = new Bitmap(1, 1);
             string[] fileNames =
             {
-            "comboburst",
-            "comboburst@2x",
-            "comboburst-fruits",
-            "comboburst-fruits@2x",
-            "comboburst-mania",
-            "comboburst-mania@2x",
-        };
+                "comboburst",
+                "comboburst@2x",
+                "comboburst-fruits",
+                "comboburst-fruits@2x",
+                "comboburst-mania",
+                "comboburst-mania@2x",
+            };
 
             foreach (string name in fileNames)
             {
-                if (!File.Exists(Path.Combine(MainForm.helperSkin.path, name + ".png")))
+                if (!MainForm.HelperSkin.FileOfNameExists(name + ".png"))
                 {
-                    emptyImage.Save(Path.Combine(MainForm.helperSkin.path, name + ".png"));
-                    if (OsuHelper.spamLogs)
-                        MainForm.DebugLog($"Saving empty image to {Path.Combine(MainForm.helperSkin.path, name + ".png")}", false);
+                    EmptyImage.Save(MainForm.HelperSkin.GetPathOfFile(name + ".png"));
+                    if (OsuHelper.SpamLogs)
+                        MainForm.DebugLog($"Saving empty image to {MainForm.HelperSkin.GetPathOfFile(name + ".png")}", false);
                 }
             }
 
             //incase there are multiple combobursts
-            DirectoryInfo di = new DirectoryInfo(path);
+            DirectoryInfo di = new(Path);
             foreach (FileInfo file in di.GetFiles())
             {
                 foreach (string name in fileNames)
                     if (file.Name.Contains(name))
                     {
-                        if (show)
-                            File.Copy(file.FullName, Path.Combine(MainForm.helperSkin.path, file.Name), true);
+                        if (showState == CheckState.Checked)
+                            File.Copy(file.FullName, MainForm.HelperSkin.GetPathOfFile(file.Name), true);
                         else
-                            emptyImage.Save(Path.Combine(MainForm.helperSkin.path, file.Name));
+                            EmptyImage.Save(MainForm.HelperSkin.GetPathOfFile(file.Name));
 
-                        if (OsuHelper.spamLogs)
-                            MainForm.DebugLog($"Saving empty image to {Path.Combine(MainForm.helperSkin.path, file.Name)}", false);
+                        if (OsuHelper.SpamLogs)
+                            MainForm.DebugLog($"Saving empty image to {MainForm.HelperSkin.GetPathOfFile(file.Name)}", false);
                     }
             }
-            emptyImage.Dispose();
-
         }
 
         #endregion
@@ -562,14 +527,17 @@ namespace osu_helper
         /// <param name="fileNames">The files to be copied</param>
         private void CopyFilesToHelperSkin(string[] fileNames)
         {
+            string currentSkinFilePath;
+            string helperSkinFilePath;
             foreach (string curName in fileNames)
             {
-                string currentSkinFilePath = Path.Combine(path, curName);
-                string helperSkinFilePath = Path.Combine(MainForm.helperSkin.path, curName);
+                currentSkinFilePath = GetPathOfFile(curName);
+                helperSkinFilePath = MainForm.HelperSkin.GetPathOfFile(curName);
                 if (File.Exists(currentSkinFilePath))
                 {
                     File.Copy(currentSkinFilePath, helperSkinFilePath, true);
-                    if (OsuHelper.spamLogs)
+
+                    if (OsuHelper.SpamLogs)
                         MainForm.DebugLog($"Copying {currentSkinFilePath} to {helperSkinFilePath}", false);
                 }
             }
@@ -580,13 +548,13 @@ namespace osu_helper
         /// </summary>
         public void ChangeToSkin()
         {
-            DirectoryInfo workingSkinPathDi = new DirectoryInfo(path);
+            DirectoryInfo workingSkinPathDi = new(Path);
 
             foreach (FileInfo currentFile in workingSkinPathDi.GetFiles())
             {
-                currentFile.CopyTo(Path.Combine(MainForm.helperSkin.path, currentFile.Name), true);
-                if (OsuHelper.spamLogs)
-                    MainForm.DebugLog($"Copying \"{currentFile.FullName}\" to \"{Path.Combine(MainForm.helperSkin.path, currentFile.Name)}\"", false);
+                currentFile.CopyTo(MainForm.HelperSkin.GetPathOfFile(currentFile.Name), true);
+                if (OsuHelper.SpamLogs)
+                    MainForm.DebugLog($"Copying \"{currentFile.FullName}\" to \"{MainForm.HelperSkin.GetPathOfFile(currentFile.Name)}\"", false);
             }
             RecursiveSkinFolderMove("\\");
         }
@@ -597,26 +565,26 @@ namespace osu_helper
         /// <param name="prevFolder">The path of the previous folders</param>
         private void RecursiveSkinFolderMove(string prevFolder)
         {
-            DirectoryInfo rootFolder = new DirectoryInfo(path + prevFolder);
+            DirectoryInfo rootFolder = new(Path + prevFolder);
 
             foreach (DirectoryInfo folder in rootFolder.GetDirectories())
             {
-                Directory.CreateDirectory(MainForm.helperSkin.path + prevFolder + Path.DirectorySeparatorChar + folder.Name);
-                DirectoryInfo subFolder = new DirectoryInfo(path + prevFolder + Path.DirectorySeparatorChar + folder.Name);
+                Directory.CreateDirectory(MainForm.HelperSkin.Path + prevFolder + System.IO.Path.DirectorySeparatorChar + folder.Name);
+                DirectoryInfo subFolder = new(Path + prevFolder + System.IO.Path.DirectorySeparatorChar + folder.Name);
 
 
                 foreach (FileInfo file in subFolder.GetFiles())
                 {
-                    file.CopyTo(MainForm.helperSkin.path + prevFolder + Path.DirectorySeparatorChar + folder.Name + Path.DirectorySeparatorChar + file.Name, true);
-                    if (OsuHelper.spamLogs)
-                        MainForm.DebugLog($"Copying \"{file.FullName}\" to \"{Path.Combine(MainForm.helperSkin.path + prevFolder, folder.Name, file.Name)}\"", false);
+                    file.CopyTo(System.IO.Path.Combine(MainForm.HelperSkin.Path + prevFolder, folder.Name, file.Name), true);
+
+                    if (OsuHelper.SpamLogs)
+                        MainForm.DebugLog($"Copying \"{file.FullName}\" to \"{System.IO.Path.Combine(MainForm.HelperSkin.Path + prevFolder, folder.Name, file.Name)}\"", false);
                 }
 
                 if (subFolder.GetDirectories().Length != 0)
-                    RecursiveSkinFolderMove(prevFolder + Path.DirectorySeparatorChar + folder.Name);
+                    RecursiveSkinFolderMove(System.IO.Path.Combine(prevFolder, folder.Name));
             }
         }
-
-        #endregion
     }
+    #endregion
 }

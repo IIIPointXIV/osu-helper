@@ -5,6 +5,7 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+
 namespace osu_helper
 {
     public class MainForm : Form
@@ -16,13 +17,13 @@ namespace osu_helper
         private CheckBox showSkinNumbersBox, showSliderEndsBox, disableSkinChangesBox, disableCursorTrailBox, showComboBurstsBox, showHitLightingBox, hiddenSkinFiltersText, showHitCirclesBox,
         makeInstafadeBox, expandingCursorBox;
 
-        private System.Windows.Forms.OpenFileDialog openFileDialog1;
+        private OpenFileDialog openFileDialog1;
         private ToolTip toolTip;
         private ComboBox skinFilterSelector;
         private Font mainFont, searchBoxFont;
         private ListBox osuSkinsListBox;
-        private List<UserSkin> osuSkinsList = new List<UserSkin>();
-        public static HelperSkin helperSkin { get; private set; }
+        private readonly List<UserSkin> osuSkinsList = new();
+        public static HelperSkin HelperSkin { get; private set; }
         public enum ValueName
         {
             disableCursorTrail,
@@ -44,14 +45,14 @@ namespace osu_helper
             searchSkinsText,
             defaultValue,
         };
-        Dictionary<ValueName, string> loadedValues = new Dictionary<ValueName, string>();
+        readonly Dictionary<ValueName, string> loadedValues = new();
 
         #region Setup
 
         /// <summary>
         /// Pops up box asking user to change the osu! path
         /// </summary>
-        public void ChangeOsuPath()
+        public static void ChangeOsuPath()
         {
             /* osuFolderPathBox.Text =  */
             OsuHelper.ChangeOsuPath();
@@ -64,44 +65,44 @@ namespace osu_helper
         /// <param name="spamLogsArgs">Should it log everything it does?</param>
         public void SetupForm()
         {
-            this.FormClosing += new FormClosingEventHandler(SaveEditedValues);
+            FormClosing += new FormClosingEventHandler(SaveEditedValues);
             DebugLog("[STARTING UP]", false);
             LoadValues();
             mainFont = new Font("Segoe UI", 12);
             searchBoxFont = new Font("Segoe UI", 10);
 
             //TODO: Fix changing osu path so OsuHelper.osuPath can be private set
-            openFileDialog1 = new System.Windows.Forms.OpenFileDialog()
+            openFileDialog1 = new()
             {
-                InitialDirectory = OsuHelper.osuPath,
+                InitialDirectory = OsuHelper.OsuFolderPath,
                 Filter = "Directory|*.directory",
                 FileName = "",
                 Title = "Select osu! directory"
             };
             if (IsSavedValueEmpty(ValueName.osuPath)) //If the path is not set, try to get default directory. If it is not there throw an error
             {
-                OsuHelper.osuPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE")!, "appdata", "Local", "osu!");
-                if (!File.Exists(Path.Combine(OsuHelper.osuPath, "osu!.exe")))
+                OsuHelper.OsuFolderPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE")!, "appdata", "Local", "osu!");
+                if (!File.Exists(OsuHelper.OsuExePath))
                 {
                     MessageBox.Show("Unable to find valid osu directory. Please select one.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     ChangeOsuPath();
                 }
             }
             else
-                OsuHelper.osuPath = GetValue(ValueName.osuPath);
+                OsuHelper.OsuFolderPath = GetValue(ValueName.osuPath);
 
-            helperSkin = HelperSkin.Instance;
+            HelperSkin = HelperSkin.Instance;
 
-            this.MaximizeBox = false;
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.Name = "Skin Manager";
-            this.Text = "Skin Manager";
-            this.Size = new Size(800, 800);
-            this.Icon = new Icon(Path.Combine(".", "Images", "o_h_kDs_icon.ico"));
+            MaximizeBox = false;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            Name = "Skin Manager";
+            Text = "Skin Manager";
+            Size = new Size(800, 800);
+            Icon = new Icon(Path.Combine(".", "Images", "o_h_kDs_icon.ico"));
 
-            List<Control> topRow = new List<Control>();
-            List<Control> searchRow = new List<Control>();
-            List<Control> bottomRow = new List<Control>();
+            List<Control> topRow = new();
+            List<Control> searchRow = new();
+            List<Control> bottomRow = new();
             SetupTopRowControls(ref topRow);
             AddControls(topRow, 3);
             SetupSearchRowControls(ref searchRow);
@@ -110,28 +111,23 @@ namespace osu_helper
             AddControls(bottomRow, 737);
             SetupSkinChangeCheckBoxes();
 
-            SetupToolTip();
+            SetupToolTips();
 
-            DirectoryInfo osuPathDI = new DirectoryInfo(Path.Combine(OsuHelper.osuPath, "skins"));
+            DirectoryInfo osuPathDI = new(OsuHelper.OsuSkinsFolderPath);
             if (osuPathDI.Exists)
             {
-                if (!Directory.Exists(helperSkin.path))
-                    osuPathDI.CreateSubdirectory(OsuHelper.managerFolderName);
+                if (!Directory.Exists(HelperSkin.Path))
+                    osuPathDI.CreateSubdirectory(OsuHelper.ManagerFolderName);
 
-                if (!Directory.Exists(Path.Combine(OsuHelper.osuPath, "skins", "Deleted Skins")))
+                if (!Directory.Exists(OsuHelper.DeletedSkinsFolderPath))
                     osuPathDI.CreateSubdirectory("Deleted Skins");
 
-
-                FindOsuSkins(new Object());
-                /*catch
-                {
-                    DebugLog("Error searching skins", true);
-                } */
+                FindOsuSkins(new object());
             }
             DebugLog("[STARTUP FINISHED. WAITING FOR INPUT]", false);
         }
 
-        private void SetupToolTip()
+        private void SetupToolTips()
         {
             toolTip = new ToolTip();
             //toolTip.SetToolTip(searchOsuSkinsButton, "Searches osu! folder for skins");
@@ -157,17 +153,15 @@ namespace osu_helper
             //toolTip.SetToolTip(makeInstafadeBox, "Makes hitcircles fade instantly\nMay not convert back from instafade correctly\nMake intermediate (grey) to disable editing");
         }
 
-        private void AddControls(List<Control> controls, int fromTop)
+        private void AddControls(List<Control> controls, int offsetFromTop)
         {
             int leftOffset = 1;
             foreach (Control obj in controls)
             {
-                if (!(obj is ComboBox) && !(obj is TextBox))
+                if (obj is not ComboBox && obj is not TextBox)
                     obj.Width = TextRenderer.MeasureText(obj.Text, mainFont).Width + 10;
-                else
-                    DebugLog();
 
-                obj.Top = fromTop;
+                obj.Top = offsetFromTop;
                 obj.Left = leftOffset;
                 leftOffset += obj.Width + 3;
                 Controls.Add(obj);
@@ -194,7 +188,7 @@ namespace osu_helper
             writeCurrSkinBox.CheckedChanged += new EventHandler(OnClick);
             Controls.Add(writeCurrSkinBox); */
 
-            changeOsuPathButton = new System.Windows.Forms.Button()
+            changeOsuPathButton = new Button()
             {
                 Left = 0,
                 Top = 3,
@@ -282,7 +276,7 @@ namespace osu_helper
                 if (textWidth > 95)
                     searchSkinBox.Width = textWidth + 5;
                 else if (textWidth < searchSkinBox.Width - 5)
-                    searchSkinBox.Width = (textWidth < 95 ? 100 : textWidth + 5);
+                    searchSkinBox.Width = textWidth < 95 ? 100 : textWidth + 5;
             };
             if (!IsSavedValueEmpty(ValueName.searchSkinsText))
                 searchSkinBox.Text = GetValue(ValueName.searchSkinsText);
@@ -297,7 +291,7 @@ namespace osu_helper
                 TextAlign = ContentAlignment.MiddleLeft,
             };
 
-            deleteSkinSelectorButton = new System.Windows.Forms.Button()
+            deleteSkinSelectorButton = new Button()
             {
                 Top = 33,
                 Font = mainFont,
@@ -391,7 +385,7 @@ namespace osu_helper
             else
                 skinFilterSelector.Text = "All";
 
-            showFilteredSkinsButton = new System.Windows.Forms.Button()
+            showFilteredSkinsButton = new Button()
             {
                 Top = 33,
                 Font = mainFont,
@@ -403,7 +397,7 @@ namespace osu_helper
             };
             showFilteredSkinsButton.Click += new EventHandler(OnButtonClick);
 
-            hideSelectedSkinFilterButton = new System.Windows.Forms.Button()
+            hideSelectedSkinFilterButton = new Button()
             {
                 Top = 33,
                 Font = mainFont,
@@ -434,7 +428,7 @@ namespace osu_helper
 
         private void SetupBottomRowControls(ref List<Control> controls)
         {
-            useSkinButton = new System.Windows.Forms.Button()
+            useSkinButton = new Button()
             {
                 Left = 102,
                 Top = 737,
@@ -445,7 +439,7 @@ namespace osu_helper
             };
             useSkinButton.Click += new EventHandler(OnButtonClick);
 
-            randomSkinButton = new System.Windows.Forms.Button()
+            randomSkinButton = new Button()
             {
                 Left = 185,
                 Top = 737,
@@ -456,7 +450,7 @@ namespace osu_helper
             };
             randomSkinButton.Click += new EventHandler(OnButtonClick);
 
-            deleteSkinButton = new System.Windows.Forms.Button()
+            deleteSkinButton = new Button()
             {
                 Left = 3,
                 Top = 737,
@@ -467,7 +461,7 @@ namespace osu_helper
             };
             deleteSkinButton.Click += new EventHandler(OnButtonClick);
 
-            openSkinFolderButton = new System.Windows.Forms.Button()
+            openSkinFolderButton = new Button()
             {
                 Left = 298,
                 Top = 737,
@@ -478,7 +472,7 @@ namespace osu_helper
             };
             openSkinFolderButton.Click += new EventHandler(OnButtonClick);
 
-            renameSkinButton = new System.Windows.Forms.Button()
+            renameSkinButton = new Button()
             {
                 Left = 440,
                 Top = 737,
@@ -507,13 +501,15 @@ namespace osu_helper
                 if (i == 7) //skipping instafade for now
                     continue;
 
-                workingCheckBox = new CheckBox();
-                workingCheckBox.Height = 25;
-                workingCheckBox.Width = 297;
-                workingCheckBox.Font = mainFont;
-                workingCheckBox.Left = 503;
-                workingCheckBox.Top = 60 + (i * 20);
-                workingCheckBox.TextAlign = ContentAlignment.MiddleLeft;
+                workingCheckBox = new CheckBox
+                {
+                    Height = 25,
+                    Width = 297,
+                    Font = mainFont,
+                    Left = 503,
+                    Top = 60 + (i * 20),
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
                 workingCheckBox.CheckStateChanged += new EventHandler(OnCheckBoxClick);
                 workingCheckBox.ThreeState = true;
                 Controls.Add(workingCheckBox);
@@ -588,7 +584,7 @@ namespace osu_helper
                         ((CheckBox)Controls[indexInControls]).CheckState = defaultCheckState;
                         break;
                 }
-                DebugLog($"CheckBox Name is: {Controls[indexInControls].Name} | Text is: {Controls[indexInControls].Text} | Checked: {((CheckBox)Controls[indexInControls]).Checked.ToString()}", false);
+                DebugLog($"CheckBox Name is: {Controls[indexInControls].Name} | Text is: {Controls[indexInControls].Text} | Checked: {((CheckBox)Controls[indexInControls]).Checked}", false);
             }
         }
 
@@ -651,7 +647,7 @@ namespace osu_helper
             osuSkinsListBox.ClearSelected();
             osuSkinsListBox.Items.Clear();
             osuSkinsList.Clear();
-            DirectoryInfo skinFolderDI = new DirectoryInfo(Path.Combine(OsuHelper.osuPath, "skins"));
+            DirectoryInfo skinFolderDI = new(OsuHelper.OsuSkinsFolderPath);
             DirectoryInfo[] osuSkins = skinFolderDI.GetDirectories();
 
             foreach (DirectoryInfo workingSkin in osuSkins)
@@ -691,10 +687,10 @@ namespace osu_helper
                 DebugLog("Select skin before trying to open its folder", true);
                 return;
             }
-            DebugLog("Attempting open skin folder: " + Path.Combine(OsuHelper.osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()), false);
+            DebugLog("Attempting open skin folder: " + Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()), false);
 
             if (OperatingSystem.IsWindows())
-                Process.Start("explorer.exe", Path.Combine(OsuHelper.osuPath, "skins", osuSkinsListBox.SelectedItem.ToString()));
+                Process.Start("explorer.exe", Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()));
         }
 
         /// <summary>
@@ -712,9 +708,9 @@ namespace osu_helper
                 DebugLog("Find skins first. Error occurred when trying to delete skin", true);
                 return;
             }
-            string currentSkinPath = osuSkinsList[osuSkinsListBox.SelectedIndex].path;
-            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.osuPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
-            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.osuPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString())}", false);
+            string currentSkinPath = osuSkinsList[osuSkinsListBox.SelectedIndex].Path;
+            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.OsuFolderPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
+            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.OsuFolderPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString())}", false);
             osuSkinsList.RemoveAt(osuSkinsListBox.SelectedIndex);
             osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
             EnableAllControls(true);
@@ -738,9 +734,9 @@ namespace osu_helper
                     return;
 
 
-            renameTo = osuSkinsList[osuSkinsListBox.SelectedIndex].path.Replace(osuSkinsListBox.SelectedItem.ToString(), renameTo);
-            if (osuSkinsList[osuSkinsListBox.SelectedIndex].path != renameTo)
-                Directory.Move(osuSkinsList[osuSkinsListBox.SelectedIndex].path, renameTo);
+            renameTo = osuSkinsList[osuSkinsListBox.SelectedIndex].Path.Replace(osuSkinsListBox.SelectedItem.ToString(), renameTo);
+            if (osuSkinsList[osuSkinsListBox.SelectedIndex].Path != renameTo)
+                Directory.Move(osuSkinsList[osuSkinsListBox.SelectedIndex].Path, renameTo);
 
             FindOsuSkins(new Object());
 
@@ -764,7 +760,7 @@ namespace osu_helper
             }
             EnableAllControls(false);
 
-            helperSkin.DeleteSkinElements();
+            HelperSkin.DeleteSkinElements();
             UserSkin workingSkin;
             if (osuSkinsListBox.SelectedItems.Count == 1) //false if multiple skins are selected
                 workingSkin = osuSkinsList[osuSkinsListBox.SelectedIndex];
@@ -960,7 +956,7 @@ namespace osu_helper
 
             while ((curLine = reader.ReadLine()) != null)
             {
-                if (OsuHelper.spamLogs)
+                if (OsuHelper.SpamLogs)
                     DebugLog("Read | " + curLine, false);
 
                 string[] curLineArr = curLine.Split(',');
@@ -1027,8 +1023,8 @@ namespace osu_helper
             if (osuSkinsListBox.SelectedItems.Count == 1)
                 writer.WriteLine(ValueName.selectedSkin.ToString() + "," + osuSkinsListBox.SelectedItem.ToString());
 
-            if (OsuHelper.osuPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!"))
-                writer.WriteLine(ValueName.osuPath.ToString() + "," + OsuHelper.osuPath);
+            if (OsuHelper.OsuFolderPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!"))
+                writer.WriteLine(ValueName.osuPath.ToString() + "," + OsuHelper.OsuFolderPath);
 
             writer.Dispose();
         }
@@ -1111,23 +1107,23 @@ namespace osu_helper
         {
             bool shouldAdd = false;
 
-            if (skin.name != OsuHelper.managerFolderName && skin.name != "Deleted Skins")
+            if (skin.Name != OsuHelper.ManagerFolderName && skin.Name != "Deleted Skins")
             {
-                if (!hiddenSkinFiltersText.Text.Contains(skin.name.First<char>().ToString())) //true if skin does not have prefix that is supposed to be hidden
+                if (!hiddenSkinFiltersText.Text.Contains(skin.Name.First<char>().ToString())) //true if skin does not have prefix that is supposed to be hidden
                 {
-                    if (skinFilterSelector.Text != "All" && skin.name.IndexOf(skinFilterSelector.Text) == 0)
+                    if (skinFilterSelector.Text != "All" && skin.Name.IndexOf(skinFilterSelector.Text) == 0)
                         shouldAdd = true;
                     else if (skinFilterSelector.Text == "All")
                         shouldAdd = true;
                 }
             }
 
-            if (shouldAdd && skin.name.Contains(searchSkinBox.Text, StringComparison.OrdinalIgnoreCase))
+            if (shouldAdd && skin.Name.Contains(searchSkinBox.Text, StringComparison.OrdinalIgnoreCase))
             {
                 osuSkinsList.Add(skin);
-                osuSkinsListBox.Items.Add(skin.name);
-                if (OsuHelper.spamLogs)
-                    DebugLog($"Adding {skin.name} to the skin list | {skin.path}", false);
+                osuSkinsListBox.Items.Add(skin.Name);
+                if (OsuHelper.SpamLogs)
+                    DebugLog($"Adding {skin.Name} to the skin list | {skin.Path}", false);
             }
         }
 
@@ -1141,7 +1137,7 @@ namespace osu_helper
         /// <param name="alwaysLog">If true, will always log the message regardless of <paramref name="debugMode"/></param>
         public static void DebugLog(object log, bool alwaysLog)
         {
-            if (alwaysLog || OsuHelper.debugMode)
+            if (alwaysLog || OsuHelper.DebugMode)
                 Console.WriteLine(log.ToString());
         }
 

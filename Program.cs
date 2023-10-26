@@ -6,11 +6,14 @@ namespace osu_helper
 {
     public class OsuHelper
     {
-        public static string osuPath { get; set; }
-        public static string managerFolderName { get; private set; } = "!!!Skin Manager";
-        public static bool debugMode { get; protected set; } = false;
-        public static bool spamLogs { get; protected set; } = false;
-        public static MainForm form { get; private set; } = new MainForm();
+        public static string OsuFolderPath { get; set; }
+        public static string OsuExePath { get { return Path.Combine(OsuFolderPath, "osu!.exe"); } private set { } }
+        public static string OsuSkinsFolderPath { get { return Path.Combine(OsuFolderPath, "skins"); } private set { } }
+        public static string DeletedSkinsFolderPath { get { return Path.Combine(OsuSkinsFolderPath, "Deleted Skins"); } private set { } }
+        public static string ManagerFolderName { get; private set; } = "!!!Skin Manager";
+        public static bool DebugMode { get; protected set; } = false;
+        public static bool SpamLogs { get; protected set; } = false;
+        public static MainForm Form { get; private set; } = new MainForm();
 
         [STAThread]
         static void Main(string[] args)
@@ -20,15 +23,15 @@ namespace osu_helper
                 switch (i)
                 {
                     case 1:
-                        debugMode = bool.Parse(args[0]);
+                        DebugMode = bool.Parse(args[0]);
                         break;
                     case 2:
-                        spamLogs = bool.Parse(args[1]);
+                        SpamLogs = bool.Parse(args[1]);
                         break;
                 }
             }
-            form.SetupForm(/* (args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false) */);
-            Application.Run(form);
+            Form.SetupForm(/* (args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false) */);
+            Application.Run(Form);
         }
 
         /// <summary>
@@ -40,30 +43,27 @@ namespace osu_helper
         /// <returns>The string path of where the folder is.</returns>
         public static string ChangeOsuPath()
         {
-            FolderBrowserDialog directorySelector = new FolderBrowserDialog()
+            using FolderBrowserDialog directorySelector = new()
             {
                 ShowNewFolderButton = false,
                 RootFolder = Environment.SpecialFolder.MyComputer,
                 Description = "Select an osu! root directory:",
-                SelectedPath = OsuHelper.osuPath,
+                SelectedPath = OsuFolderPath,
             };
 
             DialogResult givenPath = directorySelector.ShowDialog();
             if (givenPath == DialogResult.OK)
             {
-                if (!File.Exists(directorySelector.SelectedPath + Path.DirectorySeparatorChar + "osu!.exe"))
+                if (!File.Exists(Path.Combine(directorySelector.SelectedPath, "osu!.exe")))
                 {
                     MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    directorySelector.Dispose();
                     return ChangeOsuPath();
                 }
                 /* osuFolderPathBox.Text = directorySelector.SelectedPath;
                 OsuHelper.osuPath = directorySelector.SelectedPath;
                 MainForm.DebugLog("osuPath set to: " + OsuHelper.osuPath, false); */
             }
-            directorySelector.Dispose();
-            osuPath = directorySelector.SelectedPath;
-            return osuPath;
+            return OsuFolderPath = directorySelector.SelectedPath;
         }
     }
 }

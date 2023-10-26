@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
+namespace osu_helper;
 /// <summary>
 /// Class providing ways to interact with the user.
 /// </summary>
@@ -16,11 +17,11 @@ public static class PopUp
     /// <returns><paramref name="DialogResult"/> containing what the user clicked</returns>
     public static DialogResult InputBox(string title, string promptText, ref string value)
     {
-        Form form = new Form();
-        Label label = new Label();
-        TextBox textBox = new TextBox();
-        Button buttonOk = new Button();
-        Button buttonCancel = new Button();
+        Form form = new();
+        Label label = new();
+        TextBox textBox = new();
+        Button buttonOk = new();
+        Button buttonCancel = new();
 
         form.Text = title;
         label.Text = promptText;
@@ -37,7 +38,7 @@ public static class PopUp
         buttonCancel.SetBounds(309, 72, 75, 23);
 
         label.AutoSize = true;
-        textBox.Anchor = textBox.Anchor | AnchorStyles.Right;
+        textBox.Anchor |= AnchorStyles.Right;
         buttonOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         buttonCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
 
@@ -63,10 +64,10 @@ public static class PopUp
     /// <returns>bool signifying that the user wants to do the action.</returns>
     public static bool Conformation(string text)
     {
-        Form form = new Form();
-        Label label = new Label();
-        Button buttonYes = new Button();
-        Button buttonNo = new Button();
+        Form form = new();
+        Label label = new();
+        Button buttonYes = new();
+        Button buttonNo = new();
 
         form.Text = "Are you sure?";
         label.Text = text;

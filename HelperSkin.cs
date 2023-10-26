@@ -17,24 +17,23 @@ namespace osu_helper
         {
             get
             {
-                if (instance == null)
-                    instance = new HelperSkin();
+                instance ??= new HelperSkin();
                 return instance;
             }
         }
 
-        private HelperSkin() : base(getPath()) { }
+        private HelperSkin() : base(GetPath()) { }
 
         /// <summary>
         /// Gets the path of the helper skin.
         /// </summary>
         /// <returns>The path of the helper skin.</returns>
-        private static string getPath()
+        private static string GetPath()
         {
-            if (OsuHelper.managerFolderName == null)
+            if (OsuHelper.ManagerFolderName == null)
                 throw new ArgumentNullException("managerFolderName is null.");
 
-            return Skin.getPathFromName(OsuHelper.managerFolderName);
+            return GetPathFromName(OsuHelper.ManagerFolderName);
         }
 
         /// <summary>
@@ -42,18 +41,18 @@ namespace osu_helper
         /// </summary>
         public void DeleteSkinElements()
         {
-            DirectoryInfo rootFolder = new DirectoryInfo(path);
+            DirectoryInfo rootFolder = new(Path);
 
             foreach (FileInfo file in rootFolder.GetFiles())
             {
-                if (OsuHelper.spamLogs)
+                if (OsuHelper.SpamLogs)
                     MainForm.DebugLog($"Deleting {file.FullName}", false);
                 file.Delete();
             }
 
             foreach (DirectoryInfo folder in rootFolder.GetDirectories())
             {
-                if (OsuHelper.spamLogs)
+                if (OsuHelper.SpamLogs)
                     MainForm.DebugLog($"Deleting {folder.FullName} (directory)", false);
                 Directory.Delete(folder.FullName, true);
             }

@@ -1,10 +1,11 @@
 using System.Linq;
 using System.Collections.Generic;
 
+namespace osu_helper;
 public class PinnedFiles
 {
     //TODO: THIS
-    public enum fileGroups
+    public enum FileGroups
     {
         songSelection,
         scoreScreen,
@@ -35,10 +36,10 @@ public class PinnedFiles
         target,
     };
 
-    Dictionary<fileGroups, string[]> pinnableFiles = new Dictionary<fileGroups, string[]>()
+    readonly Dictionary<FileGroups, string[]> pinnableFiles = new()
     {
 
-        {fileGroups.songSelection, new string[]
+        {FileGroups.songSelection, new string[]
         {
             "selection-mode",
             "selection-mode-over",
@@ -68,7 +69,7 @@ public class PinnedFiles
             "menu-button-background",
         }},
 
-        {fileGroups.modIcons, new string[]
+        {FileGroups.modIcons, new string[]
         {
             "selection-mod-easy",
             "selection-mod-nofail",
@@ -104,7 +105,7 @@ public class PinnedFiles
             "selection-mod-target",
         }},
 
-        {fileGroups.scoreScreen, new string[]
+        {FileGroups.scoreScreen, new string[]
         {
             "ranking-xh",
             "ranking-xh-small",
@@ -133,7 +134,7 @@ public class PinnedFiles
             "ranking-retry",
         }},
 
-        {fileGroups.pauseScreen, new string[]
+        {FileGroups.pauseScreen, new string[]
         {
             "pause-overlay",
             "pause-back",
@@ -142,12 +143,12 @@ public class PinnedFiles
             "pause-replay",
         }},
 
-        {fileGroups.failScreen, new string[]
+        {FileGroups.failScreen, new string[]
         {
             "fail-background",
         }},
 
-        {fileGroups.scoreBar, new string[]
+        {FileGroups.scoreBar, new string[]
         {
             "scorebar-bg",
             "scorebar-colour",
@@ -158,7 +159,7 @@ public class PinnedFiles
             "scorebar-marker",
         }},
 
-        {fileGroups.countdown, new string[]
+        {FileGroups.countdown, new string[]
         {
             "ready",
             "count3",
@@ -167,55 +168,55 @@ public class PinnedFiles
             "go",
         }},
 
-        {fileGroups.comboBurst, new string[]
+        {FileGroups.comboBurst, new string[]
         {
             "comboburst",
             "comboburst-mania",
             "comboburst-fruits",
         }},
 
-        {fileGroups.hitcircle, new string[]
+        {FileGroups.hitcircle, new string[]
         {
             "hitcircleselect",
             "hitcircle",
             "hitcircleoverlay",
         }},
 
-        {fileGroups.inputOverlay, new string[]
+        {FileGroups.inputOverlay, new string[]
         {
             "inputoverlay-background",
             "inputoverlay-key",
         }},
 
-        {fileGroups.approachCircle, new string[]
+        {FileGroups.approachCircle, new string[]
         {
             "approachcircle",
         }},
 
-        {fileGroups.followPoint, new string[]
+        {FileGroups.followPoint, new string[]
         {
             "followpoint",
             "followpoint-0",
         }},
 
-        {fileGroups.reverseArrow, new string[]
+        {FileGroups.reverseArrow, new string[]
         {
             "reversearrow",
         }},
 
-        {fileGroups.sliderStartCircle, new string[]
+        {FileGroups.sliderStartCircle, new string[]
         {
             "sliderstartcircle",
             "sliderstartcircleoverlay",
         }},
 
-        {fileGroups.sliderEndCircle, new string[]
+        {FileGroups.sliderEndCircle, new string[]
         {
             "sliderendcircle",
             "sliderendcircleoverlay",
         }},
 
-        {fileGroups.sliderBall, new string[]
+        {FileGroups.sliderBall, new string[]
         {
             "sliderfollowcircle",
             "sliderfollowcircle-0",
@@ -225,7 +226,7 @@ public class PinnedFiles
             "sliderb-spec",
         }},
 
-        {fileGroups.spinner, new string[]
+        {FileGroups.spinner, new string[]
         {
             "spinner-background",
             "spinner-metre",
@@ -243,19 +244,19 @@ public class PinnedFiles
             "spinner-approachcircle",
         }},
 
-        {fileGroups.hit0, new string[]
+        {FileGroups.hit0, new string[]
         {
             "hit0",
             "hit0-0",
         }},
 
-        {fileGroups.hit50, new string[]
+        {FileGroups.hit50, new string[]
         {
             "hit50",
             "hit50-0",
         }},
 
-        {fileGroups.hit100, new string[]
+        {FileGroups.hit100, new string[]
         {
             "hit100",
             "hit100-0",
@@ -263,7 +264,7 @@ public class PinnedFiles
             "hit100k-0",
         }},
 
-        {fileGroups.hit300, new string[]
+        {FileGroups.hit300, new string[]
         {
             "hit300k",
             "hit300",
@@ -273,12 +274,12 @@ public class PinnedFiles
             "hit300g-0",
         }},
 
-        {fileGroups.hitLighting, new string[]
+        {FileGroups.hitLighting, new string[]
         {
             "lighting",
         }},
 
-        {fileGroups.pippidon, new string[]
+        {FileGroups.pippidon, new string[]
         {
             "pippidonidle",
             "pippidonkiai",
@@ -286,7 +287,7 @@ public class PinnedFiles
             "pippidonclear",
         }},
 
-        {fileGroups.taiko, new string[]
+        {FileGroups.taiko, new string[]
         {
             "taiko-flower-group",
             "taiko-slider",
@@ -312,7 +313,7 @@ public class PinnedFiles
             "taiko-hit300g",
         }},
 
-        {fileGroups.fruitCatcher, new string[]
+        {FileGroups.fruitCatcher, new string[]
         {
             "fruit-catcher-idle",
             "fruit-catcher-kiai",
@@ -320,7 +321,7 @@ public class PinnedFiles
             "fruit-ryuuta",
         }},
 
-        {fileGroups.fruits, new string[]
+        {FileGroups.fruits, new string[]
         {
             "fruit-apple",
             "fruit-apple-overlay",
@@ -336,7 +337,7 @@ public class PinnedFiles
             "fruit-drop-overlay",
         }},
 
-        {fileGroups.target, new string[]
+        {FileGroups.target, new string[]
         {
             "target",
             "targetoverlay",
@@ -384,7 +385,7 @@ public class PinnedFiles
         //"sliderscorepoint",
     };
 
-    public fileGroups[] GetGroups()
+    public FileGroups[] GetGroups()
     {
         return pinnableFiles.Keys.ToArray();
     }
