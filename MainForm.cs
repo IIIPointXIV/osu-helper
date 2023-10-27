@@ -709,8 +709,8 @@ namespace osu_helper
                 return;
             }
             string currentSkinPath = osuSkinsList[osuSkinsListBox.SelectedIndex].Path;
-            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.OsuFolderPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString()));
-            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.OsuFolderPath, "skins", "Deleted Skins", osuSkinsListBox.SelectedItem.ToString())}", false);
+            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString()));
+            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString())}", false);
             osuSkinsList.RemoveAt(osuSkinsListBox.SelectedIndex);
             osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
             EnableAllControls(true);
@@ -733,12 +733,11 @@ namespace osu_helper
                 if (PopUp.InputBox("Cannot contain \"" + Path.DirectorySeparatorChar + "\"", "Rename:", ref renameTo) == DialogResult.Cancel)
                     return;
 
-
             renameTo = osuSkinsList[osuSkinsListBox.SelectedIndex].Path.Replace(osuSkinsListBox.SelectedItem.ToString(), renameTo);
             if (osuSkinsList[osuSkinsListBox.SelectedIndex].Path != renameTo)
                 Directory.Move(osuSkinsList[osuSkinsListBox.SelectedIndex].Path, renameTo);
 
-            FindOsuSkins(new Object());
+            FindOsuSkins(new object());
 
             osuSkinsListBox.ClearSelected();
 
@@ -766,13 +765,13 @@ namespace osu_helper
                 workingSkin = osuSkinsList[osuSkinsListBox.SelectedIndex];
             else
             {
-                Random r = new Random();
+                Random r = new();
                 int randomSkinIndex = osuSkinsListBox.Items.IndexOf(osuSkinsListBox.SelectedItems[r.Next(0, osuSkinsListBox.SelectedItems.Count)]);
                 workingSkin = osuSkinsList[randomSkinIndex];
 
                 osuSkinsListBox.ClearSelected();
                 osuSkinsListBox.SetSelected(randomSkinIndex, true);
-                DebugLog($"Changing to random skin from selected | Selected: {osuSkinsListBox.SelectedItem.ToString()}", false);
+                DebugLog($"Changing to random skin from selected | Selected: {osuSkinsListBox.SelectedItem}", false);
             }
 
             workingSkin.ChangeToSkin();
@@ -802,10 +801,10 @@ namespace osu_helper
         private void ChangeToRandomSkin()
         {
             EnableAllControls(false);
-            Random r = new Random();
+            Random r = new();
             osuSkinsListBox.ClearSelected();
             osuSkinsListBox.SetSelected(r.Next(0, osuSkinsListBox.Items.Count), true);
-            DebugLog($"Changed to random skin. Picked \"{osuSkinsListBox.SelectedItem.ToString()}\"", false);
+            DebugLog($"Changed to random skin. Picked \"{osuSkinsListBox.SelectedItem}\"", false);
             ChangeToSelectedSkin();
         }
 
@@ -910,8 +909,7 @@ namespace osu_helper
         /// <param name="name">The name to parse</param>
         public static ValueName ParseValueName(string name)
         {
-            object result;
-            if (Enum.TryParse(typeof(ValueName), name, true, out result))
+            if (Enum.TryParse(typeof(ValueName), name, true, out object result))
                 return (ValueName)result;
             else
                 return ValueName.defaultValue;
@@ -924,10 +922,10 @@ namespace osu_helper
         /// <returns>bool if the values is non-existent or empty.</returns>
         private bool IsSavedValueEmpty(ValueName valName)
         {
-            if (!loadedValues.Keys.Contains(valName))
+            if (!loadedValues.ContainsKey(valName))
                 return true;
 
-            return String.IsNullOrWhiteSpace(loadedValues[valName]);
+            return string.IsNullOrWhiteSpace(loadedValues[valName]);
         }
 
         /// <param name="name">The name of the checkbox you want the state of.</param>
@@ -950,7 +948,7 @@ namespace osu_helper
                 return;
 
             DebugLog("[Starting loading values from settings.txt]", false);
-            StreamReader reader = new StreamReader("settings.txt");
+            using StreamReader reader = new("settings.txt");
 
             string curLine;
 
@@ -966,7 +964,6 @@ namespace osu_helper
                 }
                 loadedValues.Add(ParseValueName(curLineArr[0]), curLineArr[1]);
             }
-            reader.Dispose();
             DebugLog("[Finished loading values from settings.txt]", false);
         }
 
@@ -979,7 +976,7 @@ namespace osu_helper
             if (!File.Exists("settings.txt"))
                 File.Create("settings.txt");
 
-            StreamWriter writer = new StreamWriter("settings.txt");
+            using StreamWriter writer = new("settings.txt");
 
             foreach (Control currentObj in Controls)
             {
@@ -1001,17 +998,17 @@ namespace osu_helper
                 {
                     if (currentObj.Name == ValueName.hiddenSkinFilter.ToString())
                         continue;
-                    else if (currentObj is CheckBox/*  &&
+                    else if (currentObj is CheckBox box/*  &&
                     (((CheckBox)currentObj).CheckState != CheckState.Indeterminate) */)
-                        writer.WriteLine(((CheckBox)currentObj).Name + "," + ((CheckBox)currentObj).CheckState.ToString());
+                        writer.WriteLine(box.Name + "," + box.CheckState.ToString());
                     else if (currentObj.Name == ValueName.selectedSkinFilter.ToString())
                     {
-                        if (currentObj.Text != "All" && !String.IsNullOrWhiteSpace(currentObj.Text))
+                        if (currentObj.Text != "All" && !string.IsNullOrWhiteSpace(currentObj.Text))
                             writer.WriteLine(ValueName.selectedSkinFilter.ToString() + "," + currentObj.Text);
                     }
                     else if (currentObj is TextBox)
                     {
-                        if (String.IsNullOrWhiteSpace(currentObj.Text))
+                        if (string.IsNullOrWhiteSpace(currentObj.Text))
                             continue;
                         if (currentObj.Name == ValueName.osuPath.ToString())
                             continue;
@@ -1025,8 +1022,6 @@ namespace osu_helper
 
             if (OsuHelper.OsuFolderPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!"))
                 writer.WriteLine(ValueName.osuPath.ToString() + "," + OsuHelper.OsuFolderPath);
-
-            writer.Dispose();
         }
 
         #endregion
@@ -1074,7 +1069,7 @@ namespace osu_helper
         {
             if (osuSkinsListBox.SelectedItems.Count == 1)
                 return osuSkinsList[osuSkinsListBox.SelectedIndex];
-            else if (String.IsNullOrWhiteSpace(GetValue(ValueName.selectedSkin)) || osuSkinsListBox.SelectedItems.Count > 1)
+            else if (string.IsNullOrWhiteSpace(GetValue(ValueName.selectedSkin)) || osuSkinsListBox.SelectedItems.Count > 1)
                 DebugLog("Multiple/no skins selected. Unable to get skin path.", true);
             else
                 return new UserSkin(GetValue(ValueName.selectedSkin), false);
@@ -1109,7 +1104,7 @@ namespace osu_helper
 
             if (skin.Name != OsuHelper.ManagerFolderName && skin.Name != "Deleted Skins")
             {
-                if (!hiddenSkinFiltersText.Text.Contains(skin.Name.First<char>().ToString())) //true if skin does not have prefix that is supposed to be hidden
+                if (!hiddenSkinFiltersText.Text.Contains(skin.Name.First().ToString())) //true if skin does not have prefix that is supposed to be hidden
                 {
                     if (skinFilterSelector.Text != "All" && skin.Name.IndexOf(skinFilterSelector.Text) == 0)
                         shouldAdd = true;
