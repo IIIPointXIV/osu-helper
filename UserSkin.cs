@@ -112,40 +112,42 @@ namespace osu_helper
                 File.Delete(Form1.helperSkin.iniPath.Replace("skin.ini", "skin.ini.temp")); */
 
             File.Copy(MainForm.HelperSkin.INIPath, MainForm.HelperSkin.TempINIPath);
-            using StreamReader reader = new(MainForm.HelperSkin.TempINIPath);
-            using StreamWriter writer = new(MainForm.HelperSkin.INIPath);
-            string? currLine;
-            bool lineFound = false;
-
-            //Loop through the ini looking for searchFor
-            while ((currLine = reader.ReadLine()) != null)
+            using (StreamReader reader = new(MainForm.HelperSkin.TempINIPath))
             {
-                if (currLine.Contains(searchFor))
+                using StreamWriter writer = new(MainForm.HelperSkin.INIPath);
+                string? currLine;
+                bool lineFound = false;
+
+                //Loop through the ini looking for searchFor
+                while ((currLine = reader.ReadLine()) != null)
                 {
-                    writer.WriteLine(replaceWith);
-                    lineFound = true;
-                    continue;
-                }
-                writer.WriteLine(currLine);
-            }
-
-            currLine = null;
-
-            if (!lineFound)
-            {
-                using StreamWriter writerNew = new(MainForm.HelperSkin.INIPath);
-                using StreamReader readerNew = new(MainForm.HelperSkin.TempINIPath);
-
-                //Loop through ini looking for fallBackSearch
-                while ((currLine = readerNew.ReadLine()) != null)
-                {
-                    if (currLine.Contains(fallBackSearch))
+                    if (currLine.Contains(searchFor))
                     {
-                        writerNew.WriteLine(currLine);
-                        writerNew.WriteLine(replaceWith);
+                        writer.WriteLine(replaceWith);
+                        lineFound = true;
                         continue;
                     }
-                    writerNew.WriteLine(currLine);
+                    writer.WriteLine(currLine);
+                }
+
+                currLine = null;
+
+                if (!lineFound)
+                {
+                    using StreamWriter writerNew = new(MainForm.HelperSkin.INIPath);
+                    using StreamReader readerNew = new(MainForm.HelperSkin.TempINIPath);
+
+                    //Loop through ini looking for fallBackSearch
+                    while ((currLine = readerNew.ReadLine()) != null)
+                    {
+                        if (currLine.Contains(fallBackSearch))
+                        {
+                            writerNew.WriteLine(currLine);
+                            writerNew.WriteLine(replaceWith);
+                            continue;
+                        }
+                        writerNew.WriteLine(currLine);
+                    }
                 }
             }
 
