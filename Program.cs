@@ -6,9 +6,9 @@ namespace osu_helper
 {
     public class OsuHelper
     {
-        public static string OsuFolderPath { get; set; }
-        public static string OsuExePath { get { return Path.Combine(OsuFolderPath, "osu!.exe"); } private set { } }
-        public static string OsuSkinsFolderPath { get { return Path.Combine(OsuFolderPath, "skins"); } private set { } }
+        public static string? OsuFolderPath { get; set; }
+        public static string OsuExePath { get { return Path.Combine(OsuFolderPath!, "osu!.exe"); } private set { } }
+        public static string OsuSkinsFolderPath { get { return Path.Combine(OsuFolderPath!, "skins"); } private set { } }
         public static string DeletedSkinsFolderPath { get { return Path.Combine(OsuSkinsFolderPath, "Deleted Skins"); } private set { } }
         public static string ManagerFolderName { get; private set; } = "!!!Skin Manager";
         public static bool DebugMode { get; protected set; } = false;
@@ -30,7 +30,7 @@ namespace osu_helper
                         break;
                 }
             }
-            Form.SetupForm(/* (args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false) */);
+            //Form.SetupForm(/* (args.Length != 0 ? bool.Parse(args[0]) : false), (args.Length == 2 ? bool.Parse(args[1]) : false) */);
             Application.Run(Form);
         }
 
@@ -41,7 +41,7 @@ namespace osu_helper
         /// Re-prompts if invalid directory is given.
         /// </remarks>
         /// <returns>The string path of where the folder is.</returns>
-        public static string ChangeOsuPath()
+        public static string? ChangeOsuPath()
         {
             using FolderBrowserDialog directorySelector = new()
             {
@@ -51,19 +51,20 @@ namespace osu_helper
                 SelectedPath = OsuFolderPath,
             };
 
-            DialogResult givenPath = directorySelector.ShowDialog();
-            if (givenPath == DialogResult.OK)
+            DialogResult res = directorySelector.ShowDialog();
+            if (directorySelector.SelectedPath != null && res == DialogResult.OK)
             {
                 if (!File.Exists(Path.Combine(directorySelector.SelectedPath, "osu!.exe")))
                 {
                     MessageBox.Show("Not a valid osu! directory!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return ChangeOsuPath();
                 }
+                return OsuFolderPath = directorySelector.SelectedPath;
                 /* osuFolderPathBox.Text = directorySelector.SelectedPath;
                 OsuHelper.osuPath = directorySelector.SelectedPath;
                 MainForm.DebugLog("osuPath set to: " + OsuHelper.osuPath, false); */
             }
-            return OsuFolderPath = directorySelector.SelectedPath;
+            return null;
         }
     }
 }

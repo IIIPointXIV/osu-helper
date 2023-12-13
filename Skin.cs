@@ -89,7 +89,7 @@ namespace osu_helper
         /// </summary>
         /// <param name="name">The name of the skin.</param>
         /// <returns>The path of the skin.</returns>
-        public static string GetPathFromName(string name) => System.IO.Path.Combine(OsuHelper.OsuFolderPath, "skins", name);
+        public static string GetPathFromName(string name) => System.IO.Path.Combine(OsuHelper.OsuFolderPath!, "skins", name);
 
         /// <param name="fileName">The name of the file</param>
         /// <returns>The path of <paramref name="fileName"/></returns>
@@ -101,7 +101,7 @@ namespace osu_helper
 
         public static string GetSkinFolderPathFromName(string name) => System.IO.Path.Combine(OsuHelper.OsuSkinsFolderPath, name);
         
-        public override bool Equals(object obj) => obj is Skin skin && Path == skin.Path;
+        public override bool Equals(object? obj) => obj is Skin skin && Path == skin.Path;
 
         public override int GetHashCode() => HashCode.Combine(Name, Path);
 

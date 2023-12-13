@@ -11,7 +11,7 @@ namespace osu_helper
     /// </remarks>
     public sealed class HelperSkin : Skin
     {
-        private static HelperSkin instance;
+        private static HelperSkin? instance;
 
         public static HelperSkin Instance
         {

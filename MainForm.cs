@@ -57,6 +57,13 @@ namespace osu_helper
             OsuHelper.ChangeOsuPath();
         }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public MainForm()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        {
+            SetupForm();
+        }
+
         /// <summary>
         /// Sets up the form for the user
         /// </summary>
@@ -90,7 +97,8 @@ namespace osu_helper
             else
                 OsuHelper.OsuFolderPath = GetValue(ValueName.osuPath);
 
-            HelperSkin = HelperSkin.Instance;
+            if (HelperSkin == null)
+                throw new Exception($"Error setting up {HelperSkin}");
 
             MaximizeBox = false;
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -252,7 +260,7 @@ namespace osu_helper
                     thisEvent.Handled = true;
                 }
             }; */
-        
+
             controls.Add(changeOsuPathButton);
             controls.Add(disableSkinChangesBox);
         }
@@ -322,7 +330,7 @@ namespace osu_helper
             }); */
 
             if (!IsSavedValueEmpty(ValueName.hiddenSkinFilter))
-                hiddenSkinFiltersText.Text = hiddenSkinFiltersText.Text = GetValue(ValueName.hiddenSkinFilter).Replace(",", ", ");
+                hiddenSkinFiltersText.Text = hiddenSkinFiltersText.Text = GetValue(ValueName.hiddenSkinFilter)!.Replace(",", ", ");
             else
                 hiddenSkinFiltersText.Text = "";
 
@@ -330,7 +338,7 @@ namespace osu_helper
             {
                 if (skinFilterSelector.Items.Contains(skinFilterSelector.Text))
                 {
-                    string[] origValue = GetValue(ValueName.skinFilters).Split(',');
+                    string[] origValue = GetValue(ValueName.skinFilters)!.Split(',');
                     string fixedValue = "";
 
                     foreach (string name in origValue)
@@ -370,7 +378,7 @@ namespace osu_helper
                 if (!skinFilterSelector.Items.Contains("All"))
                     skinFilterSelector.Items.Add("All");
 
-                string[] foldersArr = GetValue(ValueName.skinFilters).Split(',');
+                string[] foldersArr = GetValue(ValueName.skinFilters)!.Split(',');
                 foreach (string name in foldersArr)
                     skinFilterSelector.Items.Add(name);
             }
@@ -481,7 +489,7 @@ namespace osu_helper
                 Name = "renameSkinButton",
             };
             renameSkinButton.Click += new EventHandler(OnButtonClick);
-            
+
             controls.Add(useSkinButton);
             controls.Add(randomSkinButton);
             controls.Add(renameSkinButton);
@@ -561,7 +569,7 @@ namespace osu_helper
                         DebugLog("Error building CheckBoxes. i = " + i.ToString(), true);
                         return;
                 }
-                string regValue = GetValue(Controls[indexInControls].Name);
+                string regValue = GetValue(Controls[indexInControls].Name)!;
                 switch (regValue)
                 {
                     case "True":
@@ -594,7 +602,7 @@ namespace osu_helper
         /// <summary>
         /// Called when the user types in <paramref name="searchSkinBox"/>.
         /// </summary>
-        private void UserSearchSkins(object sender, EventArgs e)
+        private void UserSearchSkins(object? sender, EventArgs e)
         {
             FindOsuSkins(sender);
         }
@@ -602,7 +610,7 @@ namespace osu_helper
         /// <summary>
         /// Searches the skin directory and adds skins to <paramref name="osuSkinsList"/> and <paramref name="osuSkinsListBox"/>.
         /// </summary>
-        private void FindOsuSkins(object sender)
+        private void FindOsuSkins(object? sender)
         {
             if (sender != searchSkinBox)
                 EnableAllControls(false);
@@ -658,7 +666,7 @@ namespace osu_helper
                 Controls.Add(osuSkinsListBox);
 
             //if skin that was last selected is shown, select it
-            string lastSkinName = GetValue(ValueName.selectedSkin);
+            string lastSkinName = GetValue(ValueName.selectedSkin)!;
             if (lastSkinName != null && osuSkinsListBox.Items.Contains(lastSkinName))
             {
                 osuSkinsListBox.SetSelected(osuSkinsListBox.Items.IndexOf(lastSkinName), true);
@@ -686,10 +694,10 @@ namespace osu_helper
                 DebugLog("Select skin before trying to open its folder", true);
                 return;
             }
-            DebugLog("Attempting open skin folder: " + Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()), false);
+            DebugLog("Attempting open skin folder: " + Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()!), false);
 
             if (OperatingSystem.IsWindows())
-                Process.Start("explorer.exe", Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()));
+                Process.Start("explorer.exe", Skin.GetSkinFolderPathFromName(osuSkinsListBox.SelectedItem.ToString()!));
         }
 
         /// <summary>
@@ -708,8 +716,8 @@ namespace osu_helper
                 return;
             }
             string currentSkinPath = osuSkinsList[osuSkinsListBox.SelectedIndex].Path;
-            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString()));
-            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString())}", false);
+            Directory.Move(currentSkinPath, Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString()!));
+            DebugLog($"Moving {currentSkinPath} to {Path.Combine(OsuHelper.DeletedSkinsFolderPath, osuSkinsListBox.SelectedItem.ToString()!)}", false);
             osuSkinsList.RemoveAt(osuSkinsListBox.SelectedIndex);
             osuSkinsListBox.Items.RemoveAt(osuSkinsListBox.SelectedIndex);
             EnableAllControls(true);
@@ -723,7 +731,7 @@ namespace osu_helper
             if (osuSkinsListBox.SelectedItems.Count != 1)
                 return;
 
-            string renameTo = osuSkinsListBox.SelectedItem.ToString();
+            string renameTo = osuSkinsListBox.SelectedItem.ToString()!;
 
             if (PopUp.InputBox("Rename", "Rename:", ref renameTo) == DialogResult.Cancel)
                 return;
@@ -732,7 +740,7 @@ namespace osu_helper
                 if (PopUp.InputBox("Cannot contain \"" + Path.DirectorySeparatorChar + "\"", "Rename:", ref renameTo) == DialogResult.Cancel)
                     return;
 
-            renameTo = osuSkinsList[osuSkinsListBox.SelectedIndex].Path.Replace(osuSkinsListBox.SelectedItem.ToString(), renameTo);
+            renameTo = osuSkinsList[osuSkinsListBox.SelectedIndex].Path.Replace(osuSkinsListBox.SelectedItem.ToString()!, renameTo);
             if (osuSkinsList[osuSkinsListBox.SelectedIndex].Path != renameTo)
                 Directory.Move(osuSkinsList[osuSkinsListBox.SelectedIndex].Path, renameTo);
 
@@ -780,7 +788,7 @@ namespace osu_helper
             if (!disableSkinChangesBox!.Checked)
             {
                 DebugLog("[STARTING EDITING SKIN]", false);
-                GetCurrentSkin().EditSkin(Controls);
+                GetCurrentSkin()!.EditSkin(Controls);
                 /* GetCurrentSkin().ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
                 GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
                 GetCurrentSkin().ShowCursorTrail(disableCursorTrailBox.CheckState);
@@ -816,8 +824,11 @@ namespace osu_helper
         /// <summary>
         /// Handles button click events
         /// </summary>
-        private void OnButtonClick(object sender, EventArgs e)
+        private void OnButtonClick(object? sender, EventArgs e)
         {
+            if (sender == null)
+                return;
+
             if (sender == randomSkinButton)
                 ChangeToRandomSkin();
             else if (sender == useSkinButton)
@@ -841,24 +852,27 @@ namespace osu_helper
         /// <summary>
         /// Handles click events of all of the checkboxes.
         /// </summary>
-        private void OnCheckBoxClick(object sender, EventArgs e)
+        private void OnCheckBoxClick(object? sender, EventArgs e)
         {
+            if (sender == null || GetCurrentSkin() == null)
+                return;
+
             if (osuSkinsListBox.SelectedIndex == -1)
                 return;
             else if (sender == showSkinNumbersBox)
-                GetCurrentSkin().ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
+                GetCurrentSkin()!.ShowHitCircleNumbers(showSkinNumbersBox.CheckState);
             else if (sender == showSliderEndsBox)
-                GetCurrentSkin().ShowSliderEnds(showSliderEndsBox.CheckState);
+                GetCurrentSkin()!.ShowSliderEnds(showSliderEndsBox.CheckState);
             else if (sender == disableCursorTrailBox)
-                GetCurrentSkin().ShowCursorTrail(disableCursorTrailBox.CheckState);
+                GetCurrentSkin()!.ShowCursorTrail(disableCursorTrailBox.CheckState);
             else if (sender == showComboBurstsBox)
-                GetCurrentSkin().ShowComboBursts(showComboBurstsBox.CheckState);
+                GetCurrentSkin()!.ShowComboBursts(showComboBurstsBox.CheckState);
             else if (sender == showHitLightingBox)
-                GetCurrentSkin().ShowHitLighting(showHitLightingBox.CheckState);
+                GetCurrentSkin()!.ShowHitLighting(showHitLightingBox.CheckState);
             else if (sender == showHitCirclesBox)
-                GetCurrentSkin().ShowHitCircles(showHitCirclesBox.CheckState);
+                GetCurrentSkin()!.ShowHitCircles(showHitCirclesBox.CheckState);
             else if (sender == expandingCursorBox)
-                GetCurrentSkin().ChangeExpandingCursor(expandingCursorBox.CheckState);
+                GetCurrentSkin()!.ChangeExpandingCursor(expandingCursorBox.CheckState);
             else if (sender == disableSkinChangesBox) { }
             /*         else if (sender == makeInstafadeBox)
                         MakeInstafade(makeInstafadeBox.CheckState); */
@@ -875,7 +889,7 @@ namespace osu_helper
 
         /// <param name="valName">The name you want the value of</param>
         /// <returns>The value of the ValueName with the same name.</returns>
-        private string GetValue(ValueName valName)
+        private string? GetValue(ValueName valName)
         {
             if (!IsSavedValueEmpty(valName))
                 return loadedValues[valName];
@@ -894,7 +908,7 @@ namespace osu_helper
 
         /// <param name="valName">The name you want the value of</param>
         /// <returns>The value of the ValueName with the same name.</returns>
-        private string GetValue(string valName)
+        private string? GetValue(string valName)
         {
             return GetValue(ParseValueName(valName));
         }
@@ -908,8 +922,11 @@ namespace osu_helper
         /// <param name="name">The name to parse</param>
         public static ValueName ParseValueName(string name)
         {
-            if (Enum.TryParse(typeof(ValueName), name, true, out object result))
-                return (ValueName)result;
+            if (Enum.TryParse(typeof(ValueName), name, true, out object? result))
+                if (result == null)
+                    return ValueName.defaultValue;
+                else
+                    return (ValueName)result;
             else
                 return ValueName.defaultValue;
         }
@@ -932,7 +949,7 @@ namespace osu_helper
         private CheckState GetCheckState(ValueName name)
         {
             if (!IsSavedValueEmpty(name))
-                return (CheckState)Enum.Parse(typeof(CheckState), GetValue(name), true);
+                return (CheckState)Enum.Parse(typeof(CheckState), GetValue(name)!, true);
             else
                 return CheckState.Unchecked;
 
@@ -952,7 +969,7 @@ namespace osu_helper
 
             string curLine;
 
-            while ((curLine = reader.ReadLine()) != null)
+            while ((curLine = reader.ReadLine()!) != null)
             {
                 if (OsuHelper.SpamLogs)
                     DebugLog("Read | " + curLine, false);
@@ -970,7 +987,7 @@ namespace osu_helper
         /// <summary>
         /// Saves the values of checkboxes, filters, ect. to settings.txt
         /// </summary>
-        private void SaveEditedValues(object sender, EventArgs e)
+        private void SaveEditedValues(object? sender, EventArgs e)
         {
             const string path = "settings.txt";
             //save the values of things
@@ -1021,7 +1038,7 @@ namespace osu_helper
             if (osuSkinsListBox.SelectedItems.Count == 1)
                 writer.WriteLine(ValueName.selectedSkin.ToString() + "," + osuSkinsListBox.SelectedItem.ToString());
 
-            if (OsuHelper.OsuFolderPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "appdata", "Local", "osu!"))
+            if (OsuHelper.OsuFolderPath != Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE")!, "appdata", "Local", "osu!"))
                 writer.WriteLine(ValueName.osuPath.ToString() + "," + OsuHelper.OsuFolderPath);
         }
 
@@ -1066,14 +1083,20 @@ namespace osu_helper
         /// If no skin is selected and no name is saved, throws an error.
         /// </remarks>
         /// <returns>The UserSkin object of the skin that is being used.</returns>
-        private UserSkin GetCurrentSkin()
+        private UserSkin? GetCurrentSkin()
         {
             if (osuSkinsListBox.SelectedItems.Count == 1)
                 return osuSkinsList[osuSkinsListBox.SelectedIndex];
             else if (string.IsNullOrWhiteSpace(GetValue(ValueName.selectedSkin)) || osuSkinsListBox.SelectedItems.Count > 1)
                 DebugLog("Multiple/no skins selected. Unable to get skin path.", true);
             else
-                return new UserSkin(GetValue(ValueName.selectedSkin), false);
+            {
+                string? e = GetValue(ValueName.selectedSkin);
+                if (e == null)
+                    return null;
+                else
+                    return new UserSkin(e, false);
+            }
 
             return null;
         }
