@@ -31,7 +31,7 @@ namespace osu_helper
         private static string GetPath()
         {
             if (OsuHelper.ManagerFolderName == null)
-                throw new ArgumentNullException("managerFolderName is null.");
+                throw new ArgumentNullException($"{nameof(OsuHelper.ManagerFolderName)} is null.");
 
             return GetPathFromName(OsuHelper.ManagerFolderName);
         }

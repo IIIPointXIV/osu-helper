@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -13,15 +14,11 @@ namespace osu_helper
     {
         #region Constructors
         /// <param name="path">The path that this skin will use.</param>
-        public UserSkin(string path) : base(path)
-        {
-        }
+        public UserSkin(string path) : base(path) { }
 
         /// <param name="nameOrPath">The name or path that this skin will use.</param>
         /// <param name="isPath">If true, the skin given will be treated as a path.</param>
-        public UserSkin(string nameOrPath, bool isPath) : base(nameOrPath, isPath)
-        {
-        }
+        public UserSkin(string nameOrPath, bool isPath) : base(nameOrPath, isPath) { }
 
         #endregion
 
@@ -184,7 +181,7 @@ namespace osu_helper
         /// Indeterminate: Does nothing</param>
         public void ShowSliderEnds(CheckState showState)
         {
-            MainForm.DebugLog($"ShowSliderEnds({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowSliderEnds)}({showState}) called", false);
 
             if (showState == CheckState.Indeterminate)
                 return;
@@ -197,7 +194,7 @@ namespace osu_helper
                 "sliderendcircleoverlay@2x.png"
             };
 
-            using Image sliderImage = new Bitmap(1, 1);
+            //using Image sliderImage = new Bitmap(1, 1);
             string skipAt2X = "";
 
             if (showState == CheckState.Checked) //Showing ends
@@ -266,7 +263,7 @@ namespace osu_helper
         /// Indeterminate: Shows hit circles</param>
         public void ShowHitCircles(CheckState showState)
         {
-            MainForm.DebugLog($"ShowHitCircles({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowHitCircles)}({showState}) called", false);
 
             if (showState == CheckState.Indeterminate)
                 showState = CheckState.Checked;
@@ -308,7 +305,7 @@ namespace osu_helper
         /// Indeterminate: Does nothing</param>
         public void ShowHitCircleNumbers(CheckState showState)
         {
-            MainForm.DebugLog($"ShowHitCircleNumbers({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowHitCircleNumbers)}({showState}) called", false);
 
             if (showState == CheckState.Indeterminate)
                 return;
@@ -335,7 +332,7 @@ namespace osu_helper
         /// Indeterminate: Reverts skin ini to original</param>
         public void ChangeExpandingCursor(CheckState expand)
         {
-            MainForm.DebugLog($"ChangeExpandingCursor({expand}) called", false);
+            MainForm.DebugLog($"{nameof(ChangeExpandingCursor)}({expand}) called", false);
 
             if (expand == CheckState.Indeterminate)
             {
@@ -360,12 +357,12 @@ namespace osu_helper
         /// Indeterminate: Does nothing</param>
         public void ShowCursorTrail(CheckState showState)
         {
-            MainForm.DebugLog($"DisableCursorTrail({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowCursorTrail)}{showState}) called", false);
 
             if (showState == CheckState.Indeterminate)
                 return;
 
-            List<string> cursorFileNames = new()
+            string[] cursorFileNames =
             {
                 "cursortrail@2x.png",
                 "cursortrail.png",
@@ -407,7 +404,7 @@ namespace osu_helper
         /// Indeterminate: Reverts skin hit lighting to original</param>
         public void ShowHitLighting(CheckState showState)
         {
-            MainForm.DebugLog($"ShowHitLighting({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowHitLighting)}({showState}) called", false);
 
             string[] fileNames =
             {
@@ -476,7 +473,7 @@ namespace osu_helper
         /// Indeterminate: Hides combo bursts</param>
         public void ShowComboBursts(CheckState showState)
         {
-            MainForm.DebugLog($"ShowComboBursts({showState}) called", false);
+            MainForm.DebugLog($"{nameof(ShowComboBursts)}({showState}) called", false);
 
             if (showState == CheckState.Indeterminate)
                 showState = CheckState.Unchecked;

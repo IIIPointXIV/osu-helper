@@ -54,7 +54,6 @@ namespace osu_helper
         /// </summary>
         public static void ChangeOsuPath()
         {
-            /* osuFolderPathBox.Text =  */
             OsuHelper.ChangeOsuPath();
         }
 
@@ -610,7 +609,7 @@ namespace osu_helper
 
             if (sender == hideSelectedSkinFilterButton)
             {
-                DebugLog("hideSelectedSkinFilterButton called SearchOsuSkins()", false);
+                DebugLog($"{nameof(hideSelectedSkinFilterButton)} called {nameof(FindOsuSkins)}()", false);
                 //Adds selected prefix to hidden list
                 if (skinFilterSelector.Text != "All" && !hiddenSkinFiltersText.Text.Contains(skinFilterSelector.Text))
                 {
@@ -624,7 +623,7 @@ namespace osu_helper
             }
             else if (sender == showFilteredSkinsButton)
             {
-                DebugLog("showFilteredSkinsButton called SearchOsuSkins()", false);
+                DebugLog($"{nameof(showFilteredSkinsButton)} called {nameof(FindOsuSkins)}()", false);
                 hiddenSkinFiltersText.Text = "";
                 if (skinFilterSelector.Text == ",")
                 {
@@ -836,7 +835,7 @@ namespace osu_helper
             else if (sender == renameSkinButton)
                 RenameSelectedSkin();
             else
-                DebugLog("Problem with OnButtonClick. Sender: " + ((Control)sender).Name + " | EventArgs: " + e.ToString(), true);
+                DebugLog($"Problem with {nameof(OnButtonClick)}. Sender: " + ((Control)sender).Name + " | EventArgs: " + e.ToString(), true);
         }
 
         /// <summary>
@@ -865,7 +864,7 @@ namespace osu_helper
                         MakeInstafade(makeInstafadeBox.CheckState); */
             else
             {
-                DebugLog("Error with OnClick | " + sender.ToString(), true);
+                DebugLog($"Error with {nameof(OnCheckBoxClick)} | {sender}", true);
                 return;
             }
         }
@@ -944,11 +943,12 @@ namespace osu_helper
         /// </summary>
         private void LoadValues()
         {
-            if (!File.Exists("settings.txt"))
+            const string path = "settings.text";
+            if (!File.Exists(path))
                 return;
 
-            DebugLog("[Starting loading values from settings.txt]", false);
-            using StreamReader reader = new("settings.txt");
+            DebugLog($"[Starting loading values from {path}]", false);
+            using StreamReader reader = new(path);
 
             string curLine;
 
@@ -964,7 +964,7 @@ namespace osu_helper
                 }
                 loadedValues.Add(ParseValueName(curLineArr[0]), curLineArr[1]);
             }
-            DebugLog("[Finished loading values from settings.txt]", false);
+            DebugLog($"[Finished loading values from {path}]", false);
         }
 
         /// <summary>
@@ -972,11 +972,12 @@ namespace osu_helper
         /// </summary>
         private void SaveEditedValues(object sender, EventArgs e)
         {
+            const string path = "settings.txt";
             //save the values of things
-            if (!File.Exists("settings.txt"))
-                File.Create("settings.txt");
+            if (!File.Exists(path))
+                File.Create(path);
 
-            using StreamWriter writer = new("settings.txt");
+            using StreamWriter writer = new(path);
 
             foreach (Control currentObj in Controls)
             {
@@ -1083,7 +1084,7 @@ namespace osu_helper
         /// <param name="enable">If true, controls are enabled.</param>
         private void EnableAllControls(bool enable)
         {
-            DebugLog($"EnableAllControls({enable}) called", false);
+            DebugLog($"{nameof(EnableAllControls)}({enable}) called", false);
             foreach (Control obj in Controls)
             {
                 if (obj != null)

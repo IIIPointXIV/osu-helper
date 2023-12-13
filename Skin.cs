@@ -79,7 +79,7 @@ namespace osu_helper
         public static string GetNameFromPath(string path)
         {
             if (OsuHelper.OsuFolderPath == null)
-                throw new ArgumentNullException("osuPath is null. Perhaps it was not instantiated?");
+                throw new ArgumentNullException($"{nameof(OsuHelper.OsuFolderPath)} is null. Perhaps it was not instantiated?");
 
             return path.Replace(System.IO.Path.Combine(OsuHelper.OsuFolderPath, "skins") + System.IO.Path.DirectorySeparatorChar, "");
         }

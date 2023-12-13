@@ -4,6 +4,6 @@
        <TargetFramework>net6-windows</TargetFramework>
        <UseWindowsForms>true</UseWindowsForms>
        <RootNamespace>osu_helper</RootNamespace>
-       <nullable>annotations</nullable>
+       <nullable>enable</nullable>
     </PropertyGroup>
   </Project>
