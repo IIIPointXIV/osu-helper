@@ -56,6 +56,8 @@ namespace osu_helper
                         case MainForm.ValueName.showSliderEnds:
                             ShowSliderEnds(state);
                             break;
+                        case MainForm.ValueName.disableSkinChanges:
+                            break;
                         default:
                             MainForm.DebugLog("Error editing skin. Passed value was: " + obj.Name, true);
                             break;

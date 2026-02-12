@@ -9,20 +9,20 @@ namespace osu_helper
     /// <remarks>
     /// Should only have one object made.
     /// </remarks>
-    public sealed class HelperSkin : Skin
+    public class HelperSkinClass : Skin
     {
-        private static HelperSkin? instance;
+        private static HelperSkinClass? instance;
 
-        public static HelperSkin Instance
+        public static HelperSkinClass Instance
         {
             get
             {
-                instance ??= new HelperSkin();
+                instance ??= new HelperSkinClass();
                 return instance;
             }
         }
 
-        private HelperSkin() : base(GetPath()) { }
+        public HelperSkinClass() : base(GetPath()) { }
 
         /// <summary>
         /// Gets the path of the helper skin.

@@ -23,7 +23,7 @@ namespace osu_helper
         private Font mainFont, searchBoxFont;
         private ListBox osuSkinsListBox;
         private readonly List<UserSkin> osuSkinsList = new();
-        public static HelperSkin HelperSkin { get; private set; }
+        public static HelperSkinClass HelperSkin { get; set; } = new();
         public enum ValueName
         {
             disableCursorTrail,
@@ -97,6 +97,8 @@ namespace osu_helper
             else
                 OsuHelper.OsuFolderPath = GetValue(ValueName.osuPath);
 
+
+            
             if (HelperSkin == null)
                 throw new Exception($"Error setting up {HelperSkin}");
 
@@ -960,7 +962,7 @@ namespace osu_helper
         /// </summary>
         private void LoadValues()
         {
-            const string path = "settings.text";
+            const string path = "settings.txt";
             if (!File.Exists(path))
                 return;
 
